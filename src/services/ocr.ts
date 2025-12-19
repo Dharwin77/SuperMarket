@@ -2,11 +2,21 @@
 import { createWorker } from 'tesseract.js';
 import Groq from 'groq-sdk';
 
-// Initialize Groq client
-const groq = new Groq({
-  apiKey: import.meta.env.VITE_GROQ_API_KEY,
-  dangerouslyAllowBrowser: true // For client-side usage (not recommended for production)
-});
+// Initialize Groq client with error handling
+let groq: Groq | null = null;
+try {
+  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+  if (apiKey) {
+    groq = new Groq({
+      apiKey: apiKey,
+      dangerouslyAllowBrowser: true // For client-side usage (not recommended for production)
+    });
+  } else {
+    console.warn('⚠️ GROQ_API_KEY not found. OCR functionality will be limited.');
+  }
+} catch (error) {
+  console.warn('⚠️ Failed to initialize Groq client:', error);
+}
 
 // Worker instance for OCR
 let worker: any = null;
@@ -153,9 +163,16 @@ async function preprocessImage(imageFile: File): Promise<string> {
 /**
  * Identify product from OCR text using Groq LLM
  * @param ocrText - Text extracted from OCR
+ * @param products - Optional array of product objects to match against
  * @returns Promise<object> - Identified product information
  */
-export async function identifyProductWithGroq(ocrText: string): Promise<any> {
+export async function identifyProductWithGroq(ocrText: string, products: any[] = []): Promise<any> {
+  // Check if Groq client is initialized
+  if (!groq) {
+    console.error('⚠️ Groq client not initialized. GROQ_API_KEY may be missing.');
+    throw new Error('Groq client not initialized. Please check that VITE_GROQ_API_KEY is set in your environment variables.');
+  }
+  
   const cleanText = ocrText.trim();
   if (!cleanText || cleanText.length === 0) {
     throw new Error('No text provided for product identification');
@@ -193,40 +210,60 @@ export async function identifyProductWithGroq(ocrText: string): Promise<any> {
   try {
     console.log('🤖 Sending OCR text to Groq for product identification...');
     
+    // Prepare product inventory data for the prompt
+    let productInventoryInfo = "";
+    if (products && products.length > 0) {
+      // Create a concise representation of products
+      const productSample = products.slice(0, 50); // Limit to first 50 products to avoid token limits
+      productInventoryInfo = "\n\nAvailable Products in Inventory:\n";
+      productInventoryInfo += productSample.map((product, index) => {
+        return `${index + 1}. ${product.name} (${product.brand || 'Unknown Brand'}) - ${product.category || 'General'}`;
+      }).join('\n');
+      
+      // Add note about total count
+      if (products.length > 50) {
+        productInventoryInfo += `\n... and ${products.length - 50} more products`;
+      }
+    }
+    
     const prompt = `
 You are an expert retail product classifier that specializes in identifying consumer goods from OCR text extracted from product packaging.
 
 Instructions:
 1. Analyze the OCR text which may contain brand names, product names, flavors, sizes, and other packaging information
-2. Extract the most relevant product information
-3. Be aware that OCR text may contain errors, artifacts, or incomplete words
-4. Focus on identifying the core product, brand, and category
-5. If you see common brand names like "KitKat", "Coca-Cola", "Lays", etc., prioritize those in your response
+2. Match this information against the provided product inventory
+3. Return the best matching product from the inventory
+4. Be aware that OCR text may contain errors, artifacts, or incomplete words
+5. Focus on identifying the core product, brand, and category
+6. If you see common brand names like "KitKat", "Coca-Cola", "Lay's", etc., prioritize those in your response
+
+Common OCR Artifacts to Ignore:
+- Random characters or symbols
+- Fragmented words
+- Numbers that aren't part of product info (like barcodes)
+- Repeated letters or artifacts
 
 OCR Text:
 """
 ${ocrText}
 """
+${productInventoryInfo}
 
 Respond in JSON format with this exact structure:
 {
   "productName": "Full product name including flavor/variant if visible",
   "brand": "Brand name",
   "category": "Product category (e.g., Chocolate, Snacks, Beverages, etc.)",
-  "confidence": 0-100
+  "confidence": 0-100,
+  "matchedProductId": "ID of matched product from inventory or null if no match"
 }
 
-Special cases:
-- If the text is clearly from a known brand, use the official brand name
-- If you see "KITKAT" or variations, the brand is "KitKat"
-- If you see "COCA COLA" or variations, the brand is "Coca-Cola"
-- If the text is too unclear to identify a product, return:
-{
-  "productName": "Unknown Product",
-  "brand": "Unknown",
-  "category": "General",
-  "confidence": 0
-}
+Special handling for common brands:
+- If you see "KITKAT" or variations, the brand is "KitKat" and product is "KitKat Chocolate Bar" or similar
+- If you see "COCA COLA" or "COCA-COLA", the brand is "Coca-Cola"
+- If you see "LAY S" or "LAY'S", the brand is "Lay's"
+- If you see "HER SHEY" or "HERSHEYS", the brand is "Hershey's"
+- If you see "M M S" or "M&MS", the brand is "M&M's"
 
 Examples:
 - For OCR containing "KITKAT" and "CHOCOLATE", return:
@@ -234,7 +271,8 @@ Examples:
   "productName": "KitKat Chocolate Bar",
   "brand": "KitKat",
   "category": "Chocolate",
-  "confidence": 95
+  "confidence": 95,
+  "matchedProductId": null
 }
 
 - For OCR containing "LAY S" and "CLASSIC", return:
@@ -242,11 +280,31 @@ Examples:
   "productName": "Lay's Classic Potato Chips",
   "brand": "Lay's",
   "category": "Snacks",
-  "confidence": 90
+  "confidence": 90,
+  "matchedProductId": null
 }
 
-Provide your best interpretation based on the OCR text.
+If you find a close match in the inventory, return the product details and include the matchedProductId:
+{
+  "productName": "Exact product name from inventory",
+  "brand": "Brand from inventory",
+  "category": "Category from inventory",
+  "confidence": 85,
+  "matchedProductId": "product-id-from-inventory"
+}
+
+If the OCR text is too unclear to identify a product, return:
+{
+  "productName": "Unknown Product",
+  "brand": "Unknown",
+  "category": "General",
+  "confidence": 0,
+  "matchedProductId": null
+}
+
+Provide your best interpretation based on the OCR text and match against the inventory when possible. Focus on actual product information and ignore artifacts.
 `;
+
     // Try multiple models in order of preference, starting with the working Llama 3.1 8B Instant
     const models = [
       "llama-3.1-8b-instant",                  // Llama 3.1 8B Instant (confirmed working)
@@ -331,30 +389,78 @@ Provide your best interpretation based on the OCR text.
 }
 
 /**
- * Process image through OCR and Groq identification
- * @param imageFile - The image file to process
- * @returns Promise<object> - Combined OCR and product identification results
+ * Process image with OCR and identify product using Groq
+ * @param imageFile - Image file to process
+ * @param products - Optional array of product objects to match against
+ * @returns Promise<object> - OCR result with product information
  */
-export async function processImageWithOCR(imageFile: File): Promise<any> {
+export async function processImageWithOCR(imageFile: File, products: any[] = []): Promise<any> {
   try {
-    // Step 1: Extract text with OCR
-    const ocrText = await extractTextFromImage(imageFile);
+    console.log('🔍 Starting OCR processing...');
     
-    // Step 2: Identify product with Groq
-    const productInfo = await identifyProductWithGroq(ocrText);
+    // Initialize OCR if not already done
+    if (!worker) {
+      console.log('🔧 Initializing OCR worker...');
+      const success = await initializeOCR();
+      if (!success) {
+        throw new Error('Failed to initialize OCR worker');
+      }
+    }
     
+    // Preprocess image for better OCR results
+    const processedImage = await preprocessImage(imageFile);
+    
+    // Perform OCR
+    console.log('📄 Performing OCR on image...');
+    const { data: { text } } = await worker.recognize(processedImage);
+    console.log('✅ OCR complete');
+    console.log('📝 Raw OCR text:', text);
+    
+    // Clean and enhance OCR text
+    const cleanedText = enhanceOCRText(text);
+    console.log('✨ Enhanced OCR text:', cleanedText);
+    
+    // Try to identify product with Groq
+    try {
+      console.log('🤖 Identifying product with Groq...');
+      const productInfo = await identifyProductWithGroq(cleanedText, products);
+      
+      return {
+        success: true,
+        ocrText: cleanedText,
+        productInfo,
+        timestamp: new Date().toISOString()
+      };
+    } catch (groqError: any) {
+      console.error('⚠️ Groq identification failed:', groqError.message);
+      
+      // Return OCR text even if Groq fails
+      return {
+        success: false,
+        ocrText: cleanedText,
+        error: groqError.message,
+        productInfo: {
+          productName: "Unknown Product",
+          brand: "Unknown",
+          category: "General",
+          confidence: 0
+        },
+        timestamp: new Date().toISOString()
+      };
+    }
+  } catch (error: any) {
+    console.error('🚨 OCR processing failed:', error);
     return {
-      ocrText,
-      productInfo,
-      success: true
-    };
-  } catch (error) {
-    console.error('⚠️ Image processing failed:', error);
-    return {
-      ocrText: '',
-      productInfo: null,
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error.message || 'Unknown error occurred during OCR processing',
+      ocrText: '',
+      productInfo: {
+        productName: "Unknown Product",
+        brand: "Unknown",
+        category: "General",
+        confidence: 0
+      },
+      timestamp: new Date().toISOString()
     };
   }
 }

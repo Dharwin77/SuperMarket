@@ -20,8 +20,7 @@ const mockProduct = {
   profitMargin: 32,
 };
 
-const Scanner = () => {
-  const { data: products } = useProducts();
+function Scanner() {  const { data: products } = useProducts();
   const [isScanning, setIsScanning] = useState(false);
   const [isOCRParsing, setIsOCRParsing] = useState(false);
   const [scannedProduct, setScannedProduct] = useState<typeof mockProduct | null>(null);
@@ -29,15 +28,36 @@ const Scanner = () => {
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [ocrResult, setOcrResult] = useState<any>(null);
   const [visionReady, setVisionReady] = useState(false);
-  const [ocrReady, setOcrReady] = useState(false);
+  const [ocrReady, setIsOCRReady] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Initialize OCR service only
-    initializeOCR().then(setOcrReady);
+    const initOCR = async () => {
+      try {
+        const success = await initializeOCR();
+        if (success) {
+          console.log('✅ OCR system ready');
+          setIsOCRReady(true);
+        } else {
+          console.log('⚠️ OCR system initialization failed');
+          setIsOCRReady(false);
+        }
+      } catch (error) {
+        console.error('🚨 OCR initialization error:', error);
+        setIsOCRReady(false);
+      }
+    };
+
+    initOCR();
+    
+    // Cleanup function
+    return () => {
+      // Any cleanup code if needed
+    };
   }, []);
+
   const handleScan = () => {
     setIsScanning(true);
     setTimeout(() => {
@@ -59,15 +79,27 @@ const Scanner = () => {
     setOcrResult(null);
 
     try {
-      // Use OCR + Groq approach only
-      console.log('🔍 Processing with OCR + Groq AI...');
-      const ocrResult = await processImageWithOCR(file);
+      // Use OCR + Groq approach only with product inventory
+      console.log('🔍 Processing with OCR + Groq AI with product inventory...');
+      const ocrResult = await processImageWithOCR(file, products || []);
       setOcrResult(ocrResult);
       
       if (ocrResult.success && ocrResult.productInfo && ocrResult.productInfo.productName !== "Unknown Product") {
         console.log('✅ OCR + Groq successful');
-        // Find matching product in our inventory
-        const matchedProduct = findMatchingProduct(ocrResult.productInfo, products || []);
+        
+        // Check if we have a direct product match from the AI
+        let matchedProduct = null;
+        if (ocrResult.productInfo.matchedProductId && products) {
+          matchedProduct = products.find(p => p.id === ocrResult.productInfo.matchedProductId);
+          if (matchedProduct) {
+            console.log(`🎯 Direct match found: ${matchedProduct.name}`);
+          }
+        }
+        
+        // If no direct match, try our matching function
+        if (!matchedProduct) {
+          matchedProduct = findMatchingProduct(ocrResult.productInfo, products || []);
+        }
         
         if (matchedProduct) {
           setScannedProduct({
@@ -79,9 +111,11 @@ const Scanner = () => {
             profitMargin: matchedProduct.profitMargin || 30,
           });
         } else {
-          // Use OCR identified product info
+          // Use OCR identified product info but indicate it's not in inventory
+          // For display, we'll show just the product name without brand
+          const productNameOnly = ocrResult.productInfo.productName.replace(/^[^a-zA-Z0-9]*|[^\w\s\-'.]/g, '').trim();
           setScannedProduct({
-            name: `${ocrResult.productInfo.brand} ${ocrResult.productInfo.productName}`,
+            name: `${productNameOnly} (Not in Inventory)`,
             mrp: 0, // Will need to be set manually or looked up
             onlinePrice: 0,
             stock: 0,
@@ -100,8 +134,16 @@ const Scanner = () => {
           shelf: 'Unknown',
           profitMargin: 0,
         });
+        
+        // Show more detailed error information
+        if (ocrResult.error) {
+          console.log('Error details:', ocrResult.error);
+        }
+        if (ocrResult.ocrText) {
+          console.log('OCR Text that failed:', ocrResult.ocrText);
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error analyzing file:', error);
       // Show error state
       setScannedProduct({
@@ -112,12 +154,17 @@ const Scanner = () => {
         shelf: 'Unknown',
         profitMargin: 0,
       });
+      
+      // If it's a Groq API key error, show a more specific message
+      if (error.message && error.message.includes('GROQ_API_KEY')) {
+        console.error('⚠️ Groq API key is missing. Please check your environment variables.');
+      }
     } finally {
       setIsScanning(false);
       setIsOCRParsing(false);
     }
   };
-
+  
   /**
    * Find matching product in inventory based on OCR results
    */
