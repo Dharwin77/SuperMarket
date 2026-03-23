@@ -325,7 +325,7 @@ export function PaymentModal({
   const amountInRupees = total.toFixed(2);
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+    <Dialog modal={false} open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-md bg-background border border-white/10 glass-panel">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold gradient-text">
