@@ -366,12 +366,15 @@ export default function Description() {
 
       // Send via WhatsApp if checkbox is checked and number provided
       let sent = false;
-      if (sendViaWhatsApp && customerWhatsApp && customerWhatsApp.trim().length === 10) {
-        // Format phone number for WhatsApp
-        let phoneNumber = customerWhatsApp.replace(/\D/g, '');
-        if (!phoneNumber.startsWith('91')) {
-          phoneNumber = '91' + phoneNumber;
-        }
+      const whatsappDigits = (customerWhatsApp || '').replace(/\D/g, '');
+      const normalizedWhatsappNumber =
+        whatsappDigits.length === 10
+          ? `91${whatsappDigits}`
+          : whatsappDigits.length === 12 && whatsappDigits.startsWith('91')
+            ? whatsappDigits
+            : '';
+
+      if (sendViaWhatsApp && normalizedWhatsappNumber) {
 
         // Create itemized list
         const itemsList = cart.map(item => 
@@ -389,11 +392,17 @@ export default function Description() {
         const encodedMessage = encodeURIComponent(message);
 
         // Create WhatsApp URL
-        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+        const whatsappUrl = `https://wa.me/${normalizedWhatsappNumber}?text=${encodedMessage}`;
 
         // Open WhatsApp
         window.open(whatsappUrl, '_blank');
         sent = true;
+      } else if (sendViaWhatsApp && !normalizedWhatsappNumber) {
+        toast({
+          title: "Invalid WhatsApp Number",
+          description: "Enter a valid 10-digit Indian number (with or without +91).",
+          variant: "destructive",
+        });
       }
 
       setMessageSent(sent);

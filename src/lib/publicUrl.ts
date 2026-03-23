@@ -13,6 +13,9 @@
  * NEVER use localhost for WhatsApp links!
  */
 export function getPublicUrl(): string {
+  const currentOrigin = window.location.origin;
+  const isCurrentLocalhost = currentOrigin.includes('localhost') || currentOrigin.includes('127.0.0.1');
+
   // Check for environment variable first
   const envPublicUrl = import.meta.env.VITE_PUBLIC_URL;
   
@@ -20,13 +23,24 @@ export function getPublicUrl(): string {
   console.log('🔍 PUBLIC URL CHECK:', envPublicUrl || 'NOT SET');
   
   if (envPublicUrl) {
+    const normalizedEnvUrl = envPublicUrl.replace(/\/$/, '');
+    const isEnvLocalOrTunnel =
+      normalizedEnvUrl.includes('localhost') ||
+      normalizedEnvUrl.includes('127.0.0.1') ||
+      normalizedEnvUrl.includes('ngrok');
+
+    // On a deployed site, prefer the deployed host over stale local/ngrok env values.
+    if (!isCurrentLocalhost && isEnvLocalOrTunnel) {
+      console.warn('⚠️ VITE_PUBLIC_URL points to local/ngrok URL in production. Using deployed origin instead.');
+      return currentOrigin;
+    }
+
     console.log('✅ Using environment variable for public URL');
-    return envPublicUrl;
+    return normalizedEnvUrl;
   }
 
   // Check if we're on a production domain (not localhost)
-  const currentOrigin = window.location.origin;
-  const isLocalhost = currentOrigin.includes('localhost') || currentOrigin.includes('127.0.0.1');
+  const isLocalhost = isCurrentLocalhost;
   
   if (!isLocalhost) {
     return currentOrigin;
