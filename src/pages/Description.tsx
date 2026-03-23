@@ -167,7 +167,7 @@ export default function Description() {
         .from("customers")
         .select("total_points")
         .eq("mobile", mobile)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== "PGRST116") {
         // PGRST116 = not found (which is ok for new customers)
@@ -253,7 +253,7 @@ export default function Description() {
         .from("customers")
         .select("mobile")
         .eq("mobile", customerMobile)
-        .single();
+        .maybeSingle();
 
       if (fetchError && fetchError.code !== "PGRST116") {
         throw fetchError;
@@ -327,7 +327,7 @@ export default function Description() {
         .from("customers")
         .select("total_points")
         .eq("mobile", customerMobile)
-        .single();
+        .maybeSingle();
 
       const totalPointsAfterPurchase = updatedCustomer?.total_points || pointsToEarn;
 

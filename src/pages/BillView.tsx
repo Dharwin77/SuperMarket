@@ -39,7 +39,7 @@ export default function BillView() {
           .from('invoices')
           .select('*')
           .eq('invoice_number', invoiceId)
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error('❌ Supabase error:', error);
