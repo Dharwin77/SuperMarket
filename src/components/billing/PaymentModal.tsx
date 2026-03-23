@@ -83,6 +83,10 @@ const BACKEND_URL = isLocalDevelopment
   ? "http://localhost:3001"
   : configuredBackendUrl;
 const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_YourKeyHere";
+const hasValidRazorpayKey =
+  !!RAZORPAY_KEY_ID &&
+  /^rzp_(test|live)_/i.test(RAZORPAY_KEY_ID) &&
+  !/yourkeyhere/i.test(RAZORPAY_KEY_ID);
 
 function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
@@ -242,6 +246,10 @@ export function PaymentModal({
     setErrorMsg(null);
 
     try {
+      if (!hasValidRazorpayKey) {
+        throw new Error("Razorpay key is not configured. Set VITE_RAZORPAY_KEY_ID in Vercel and redeploy.");
+      }
+
       if (!BACKEND_URL) {
         throw new Error("Payment API is not configured. Set VITE_BACKEND_URL to your Render backend URL and redeploy.");
       }
