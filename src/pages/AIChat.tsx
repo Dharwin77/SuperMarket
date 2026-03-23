@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Bot, User, Send, Sparkles, ArrowLeft } from "lucide-react";
-import { useProducts } from "@/hooks/useSupabase";
+import { useProducts, useSales, usePurchaseOrders } from "@/hooks/useSupabase";
 import { sendMessageToGemini, initializeGemini } from "@/services/gemini";
+import { isRelatedToSupermarket, getOfftopicSuggestion } from "@/lib/supermarketFilter";
+import { fetchDuties, fetchEvents, fetchStaffs } from "@/services/adminApi";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
@@ -19,21 +21,57 @@ interface ChatMessage {
 export default function AIChat() {
   const navigate = useNavigate();
   const { data: products } = useProducts();
+  const { data: sales } = useSales(50); // Get last 50 sales
+  const { data: purchaseOrders } = usePurchaseOrders();
+  
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
       id: '1',
       role: 'assistant',
-      content: 'Hello! I\'m your AI shopping assistant powered by Ollama. I can help you with:\n\n• Product recommendations\n• Inventory and stock information\n• Pricing queries\n• Category browsing\n• Purchase suggestions\n\nHow can I assist you today?',
+      content: 'Hello! 👋 I\'m your comprehensive AI Supermarket Assistant.\n\nI can help you with:\n• 📦 Products & Inventory\n• 💰 Sales & Revenue\n• 👥 Staff & Duties\n• 📊 Reports & Analytics\n• 🗓️ Events & Calendar\n• ⚠️ Alerts & Notifications\n\nAsk me anything about your store!',
       timestamp: new Date()
     }
   ]);
   const [chatInput, setChatInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [ollamaReady, setOllamaReady] = useState(false);
+  const [aiReady, setAiReady] = useState(false);
+  const [staffData, setStaffData] = useState<any[]>([]);
+  const [dutiesData, setDutiesData] = useState<any[]>([]);
+  const [eventsData, setEventsData] = useState<any[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    initializeGemini().then(setOllamaReady);
+    initializeGemini().then(setAiReady);
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadChatSupportData() {
+      try {
+        const [staffsResponse, dutiesResponse, eventsResponse] = await Promise.all([
+          fetchStaffs({ status: 'All' }),
+          fetchDuties({ status: 'All' }),
+          fetchEvents(),
+        ]);
+
+        if (!isMounted) {
+          return;
+        }
+
+        setStaffData(staffsResponse?.data || []);
+        setDutiesData(dutiesResponse || []);
+        setEventsData(eventsResponse || []);
+      } catch (error) {
+        console.warn('Failed to load staff/duties/events for AI chat context:', error);
+      }
+    }
+
+    loadChatSupportData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Scroll to bottom when new chat message
@@ -55,11 +93,30 @@ export default function AIChat() {
     setChatMessages(prev => [...prev, userMessage]);
     const question = chatInput;
     setChatInput("");
+    // Check if the question is related to the Supermarkt site
+    if (!isRelatedToSupermarket(question, products || [])) {
+      const suggestion = getOfftopicSuggestion();
+      const aiMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: suggestion,
+        timestamp: new Date()
+      };
+
+      setChatMessages(prev => [...prev, aiMessage]);
+      return;
+    }
+
     setIsTyping(true);
 
     try {
       const response = await sendMessageToGemini(question, {
         products: products || [],
+        sales: sales || [],
+        staff: staffData,
+        duties: dutiesData,
+        events: eventsData,
+        purchaseOrders: purchaseOrders || [],
         conversationHistory: chatMessages
       });
 
@@ -161,26 +218,26 @@ export default function AIChat() {
   return (
     <div className="min-h-screen glass-panel flex flex-col">
       {/* Header */}
-      <div className="border-b border-white/10 p-6">
+      <div className="border-b border-border p-6">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate(-1)}
-            className="hover:bg-white/10"
+            className="hover:bg-accent"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500">
-            <Bot className="h-6 w-6 text-white" />
+          <div className="p-3 rounded-xl bg-primary/10">
+            <Bot className="h-6 w-6 text-primary" />
           </div>
           <div>
             <h1 className="text-2xl font-bold gradient-text flex items-center gap-2">
               AI Chat Assistant
-              {ollamaReady && <Sparkles className="h-5 w-5 text-yellow-400" />}
+              {aiReady && <Sparkles className="h-5 w-5 text-yellow-400" />}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {ollamaReady ? 'Powered by Ollama' : 'Using smart fallback mode'}
+              {aiReady ? 'Powered by Groq API' : 'Using smart fallback mode'}
             </p>
           </div>
         </div>
@@ -196,16 +253,16 @@ export default function AIChat() {
             className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             {message.role === 'assistant' && (
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                <Bot className="h-5 w-5 text-white" />
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Bot className="h-5 w-5 text-primary" />
               </div>
             )}
             
             <div
               className={`max-w-[70%] rounded-2xl px-4 py-3 ${
                 message.role === 'user'
-                  ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
-                  : 'bg-[#1A1F2E] border border-purple-500/30'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted border border-border'
               }`}
             >
               <p className="text-sm leading-relaxed whitespace-pre-line">{message.content}</p>
@@ -224,14 +281,14 @@ export default function AIChat() {
 
         {isTyping && (
           <div className="flex gap-3 justify-start">
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-              <Bot className="h-5 w-5 text-white" />
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Bot className="h-5 w-5 text-primary" />
             </div>
-            <div className="bg-[#1A1F2E] border border-purple-500/30 rounded-2xl px-4 py-3">
+            <div className="bg-muted border border-border rounded-2xl px-4 py-3">
               <div className="flex gap-1">
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
               </div>
             </div>
           </div>
@@ -241,7 +298,7 @@ export default function AIChat() {
       </div>
 
       {/* Input */}
-      <div className="border-t border-white/10 p-6">
+      <div className="border-t border-border p-6">
         <div className="flex gap-3 max-w-4xl mx-auto">
           <Input
             type="text"
@@ -249,13 +306,13 @@ export default function AIChat() {
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-            className="flex-1 bg-[#1A1F2E] border-purple-500/30 focus:border-purple-500 h-12"
+            className="flex-1 bg-background border-border h-12"
             disabled={isTyping}
           />
           <Button
             onClick={handleSendMessage}
             disabled={!chatInput.trim() || isTyping}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 h-12 px-6"
+            className="bg-primary hover:bg-primary/90 h-12 px-6"
           >
             <Send className="h-5 w-5" />
           </Button>

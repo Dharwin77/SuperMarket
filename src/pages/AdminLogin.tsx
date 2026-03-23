@@ -1,16 +1,17 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Sparkles, Eye, EyeOff, Lock, User } from 'lucide-react';
+import { Shield, Eye, EyeOff, Lock, User, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function Login() {
+export default function AdminLogin() {
   const { login, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -34,7 +35,7 @@ export default function Login() {
       const success = login(username, password);
 
       if (!success) {
-        setError('Invalid username or password');
+        setError('Invalid admin credentials');
       }
     } finally {
       setIsLoading(false);
@@ -45,8 +46,8 @@ export default function Login() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       {/* Background effects */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
       </div>
 
       <motion.div
@@ -55,19 +56,29 @@ export default function Login() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md relative z-10"
       >
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/login')}
+          className="mb-4 text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to selection
+        </Button>
+
         <Card className="glass-panel border-border">
           <CardHeader className="space-y-4 text-center">
             <div className="flex justify-center">
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Sparkles className="h-8 w-8 text-primary" />
+              <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                <Shield className="h-8 w-8 text-white" />
               </div>
             </div>
             <div>
-              <CardTitle className="text-3xl font-bold gradient-text">
-                SuperMarket
+              <CardTitle className="text-3xl font-bold text-foreground">
+                Admin Portal
               </CardTitle>
               <CardDescription className="text-muted-foreground mt-2">
-                Sign in to access your store management system
+                Sign in with administrator credentials
               </CardDescription>
             </div>
           </CardHeader>
@@ -97,7 +108,7 @@ export default function Login() {
                     id="username"
                     type="text"
                     autoComplete="off"
-                    placeholder="Enter your username"
+                    placeholder="Enter admin username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
@@ -117,7 +128,7 @@ export default function Login() {
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="off"
-                    placeholder="Enter your password"
+                    placeholder="Enter admin password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -140,7 +151,7 @@ export default function Login() {
 
               <Button
                 type="submit"
-                className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-6 text-lg"
+                className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold py-6 text-lg"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -149,28 +160,14 @@ export default function Login() {
                     Signing in...
                   </div>
                 ) : (
-                  'Sign In'
+                  'Sign In as Admin'
                 )}
               </Button>
 
-              <div className="mt-6 p-4 rounded-lg bg-primary/10 border border-primary/20 space-y-2">
-                <p className="text-xs text-foreground font-semibold text-center mb-2">
-                  Default credentials:
+              <div className="mt-6 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                <p className="text-xs text-foreground text-center">
+                  Default: <strong>admin</strong> / <strong>admin123</strong>
                 </p>
-                <div className="space-y-1 text-xs text-foreground">
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Admin:</span>
-                    <strong>admin / admin123</strong>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Cashier:</span>
-                    <strong>cashier / cashier123</strong>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Staff:</span>
-                    <strong>staff / staff123</strong>
-                  </div>
-                </div>
               </div>
             </form>
           </CardContent>

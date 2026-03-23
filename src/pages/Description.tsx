@@ -13,6 +13,7 @@ import { useProducts } from "@/hooks/useSupabase";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { InvoiceReceipt } from "@/components/billing/InvoiceReceipt";
+import { PaymentModal, RazorpayPaymentData } from "@/components/billing/PaymentModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { saveBill } from "@/lib/billStorage";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,6 +47,8 @@ export default function Description() {
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [invoiceDate, setInvoiceDate] = useState("");
   const [messageSent, setMessageSent] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [pendingInvoiceNumber, setPendingInvoiceNumber] = useState("");
 
   // Filter products based on search
   const filteredProducts = products?.filter(
@@ -212,8 +215,11 @@ export default function Description() {
     setCheckoutOpen(true);
   };
 
-  // Handle creating bill - save to database and show invoice UI
-  const handleCreateBill = async () => {
+  // Finalize bill after payment confirmation
+  const handleCreateBill = async (
+    paymentMethod: "cash" | "online",
+    razorpayData?: RazorpayPaymentData
+  ) => {
     if (!customerName.trim()) {
       toast({
         title: "Missing customer name",
@@ -234,9 +240,8 @@ export default function Description() {
 
     try {
       // Generate invoice details
-      const invoice = generateInvoiceNumber();
+      const invoice = pendingInvoiceNumber || generateInvoiceNumber();
       setInvoiceNumber(invoice);
-      const invoiceDate = new Date().toISOString();
       setInvoiceDate(new Date().toLocaleDateString('en-US', { 
         year: 'numeric', 
         month: 'long', 
@@ -329,6 +334,8 @@ export default function Description() {
       // Save bill data for shareable link
       const billData = {
         invoiceNumber: invoice,
+        paymentMethod,
+        razorpayData,
         customerName,
         customerMobile,
         customerWhatsApp: customerWhatsApp || customerMobile,
@@ -391,6 +398,7 @@ export default function Description() {
 
       setMessageSent(sent);
       setCheckoutOpen(false);
+      setPaymentModalOpen(false);
       setShowInvoice(true);
 
       // ✅ AUTOMATIC PROFIT ANALYTICS UPDATE
@@ -430,6 +438,46 @@ export default function Description() {
     }
   };
 
+  const handleStartPayment = () => {
+    if (!customerName.trim()) {
+      toast({
+        title: "Missing customer name",
+        description: "Please enter customer name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!customerMobile.trim() || customerMobile.length !== 10) {
+      toast({
+        title: "Invalid mobile number",
+        description: "Please enter a valid 10-digit mobile number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (sendViaWhatsApp && customerWhatsApp.trim().length !== 10) {
+      toast({
+        title: "Invalid WhatsApp number",
+        description: "Please enter a valid 10-digit WhatsApp number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setPendingInvoiceNumber(generateInvoiceNumber());
+    setCheckoutOpen(false);
+    setPaymentModalOpen(true);
+  };
+
+  const handlePaymentSuccess = async (
+    method: "cash" | "online",
+    razorpayData?: RazorpayPaymentData
+  ) => {
+    await handleCreateBill(method, razorpayData);
+  };
+
   // Close invoice and reset
   const handleCloseInvoice = () => {
     setShowInvoice(false);
@@ -441,6 +489,8 @@ export default function Description() {
     setCustomerPoints(0);
     setApplyDiscount(false);
     setMessageSent(false);
+    setPendingInvoiceNumber("");
+    setPaymentModalOpen(false);
   };
 
   // If showing invoice, display the receipt component
@@ -451,7 +501,7 @@ export default function Description() {
         customerName={customerName}
         customerPhone={customerWhatsApp || undefined}
         items={cart}
-        total={total}
+        total={finalTotal}
         date={invoiceDate}
         messageSent={messageSent}
         onClose={handleCloseInvoice}
@@ -513,7 +563,7 @@ export default function Description() {
                   placeholder="Search products by name, barcode, or category..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-[#1A1F2E] border-cyan-500/30 focus:border-cyan-500"
+                  className="bg-background border-border"
                 />
               </CardContent>
             </Card>
@@ -524,7 +574,7 @@ export default function Description() {
                 <CardTitle className="text-cyan-400">Available Products</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto pr-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto pr-2">
                   {filteredProducts.length === 0 ? (
                     <div className="col-span-2 text-center py-12">
                       <ShoppingCart className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
@@ -536,33 +586,57 @@ export default function Description() {
                         key={product.id}
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="glass-card p-4 border border-white/10 hover:border-cyan-500/50 transition-all"
+                        className="glass-card p-3 border border-white/10 hover:border-cyan-500/50 transition-all"
                       >
-                        <div className="flex items-start justify-between mb-3">
+                        <div className="relative aspect-square rounded-lg overflow-hidden bg-muted mb-2 border border-white/10">
+                          {product.image_url ? (
+                            <>
+                              <img
+                                src={product.image_url}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none";
+                                  const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
+                                  if (fallback) fallback.style.display = "flex";
+                                }}
+                              />
+                              <div className="hidden absolute inset-0 items-center justify-center text-xs text-muted-foreground">
+                                No image available
+                              </div>
+                            </>
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center text-xs text-muted-foreground">
+                              No image available
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
-                            <h3 className="font-semibold text-foreground line-clamp-1">
+                            <h3 className="font-semibold text-sm text-foreground line-clamp-1">
                               {product.name}
                             </h3>
-                            <Badge variant="secondary" className="mt-1 text-xs">
+                            <Badge variant="secondary" className="mt-1 text-[10px] h-5 px-2">
                               {product.category}
                             </Badge>
                           </div>
-                          <p className="text-lg font-bold text-cyan-400">
+                          <p className="text-base font-bold text-cyan-400">
                             ₹{product.price?.toFixed(2)}
                           </p>
                         </div>
                         
-                        <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-2">
                           <span>Stock: {product.stock}</span>
                           <span className="font-mono">{product.barcode}</span>
                         </div>
 
                         <Button
                           onClick={() => addToCart(product)}
-                          className="w-full bg-cyan-500 hover:bg-cyan-600"
+                          className="w-full h-8 text-sm bg-cyan-500 hover:bg-cyan-600"
                           disabled={product.stock === 0}
                         >
-                          <Plus className="h-4 w-4 mr-2" />
+                          <Plus className="h-3.5 w-3.5 mr-2" />
                           Add to Cart
                         </Button>
                       </motion.div>
@@ -662,7 +736,7 @@ export default function Description() {
                         className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
                       >
                         <FileText className="h-4 w-4 mr-2" />
-                        Create Bill
+                        Checkout
                       </Button>
                     </div>
                   </>
@@ -674,7 +748,7 @@ export default function Description() {
 
         {/* Customer Information Dialog */}
         <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
-          <DialogContent className="sm:max-w-[500px] bg-[#0A0F1E] border-cyan-500/30 max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-[500px] bg-card border-border max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
                 Create Invoice
@@ -697,7 +771,7 @@ export default function Description() {
                     placeholder="Enter customer name"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    className="pl-10 bg-[#1A1F2E] border-cyan-500/30 focus:border-cyan-500"
+                    className="pl-10 bg-background border-border"
                   />
                 </div>
               </div>
@@ -724,7 +798,7 @@ export default function Description() {
                         setApplyDiscount(false);
                       }
                     }}
-                    className="pl-10 bg-[#1A1F2E] border-cyan-500/30 focus:border-cyan-500"
+                    className="pl-10 bg-background border-border"
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -854,7 +928,7 @@ export default function Description() {
                         placeholder="Enter 10-digit WhatsApp number"
                         value={customerWhatsApp}
                         onChange={(e) => setCustomerWhatsApp(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                        className="pl-10 bg-[#1A1F2E] border-green-500/30 focus:border-green-500"
+                        className="pl-10 bg-background border-green-300"
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -873,7 +947,7 @@ export default function Description() {
                 Cancel
               </Button>
               <Button
-                onClick={handleCreateBill}
+                onClick={handleStartPayment}
                 disabled={!customerName.trim() || customerMobile.length !== 10}
                 className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
               >
@@ -883,6 +957,28 @@ export default function Description() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <PaymentModal
+          open={paymentModalOpen}
+          onClose={() => {
+            setPaymentModalOpen(false);
+            setCheckoutOpen(true);
+          }}
+          items={cart.map((item) => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            profit: 0,
+          }))}
+          subtotal={total}
+          gst={0}
+          total={finalTotal}
+          customerName={customerName}
+          customerPhone={customerMobile}
+          invoiceNumber={pendingInvoiceNumber}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
       </div>
     </MainLayout>
   );

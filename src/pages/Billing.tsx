@@ -2,10 +2,13 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { BillingCart, CartItem } from "@/components/billing/BillingCart";
+import { PaymentModal, RazorpayPaymentData } from "@/components/billing/PaymentModal";
+import { InvoiceReceipt } from "@/components/billing/InvoiceReceipt";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, ScanLine, Receipt } from "lucide-react";
 
+import { Search, Plus, ScanLine, Receipt } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 const products = [
   { id: "1", name: "Lays Classic Chips", price: 20, profit: 6 },
   { id: "2", name: "Coca-Cola 500ml", price: 40, profit: 10 },
@@ -23,6 +26,23 @@ const Billing = () => {
     { id: "1", name: "Lays Classic Chips", price: 20, quantity: 2, profit: 6 },
     { id: "2", name: "Coca-Cola 500ml", price: 40, quantity: 1, profit: 10 },
   ]);
+
+  // Payment modal state
+
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [billTotals, setBillTotals] = useState({ subtotal: 0, gst: 0, total: 0 });
+  
+  // Customer details state
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [showCustomerForm, setShowCustomerForm] = useState(false);
+  // Invoice receipt state
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [invoiceData, setInvoiceData] = useState<{
+    invoiceNumber: string;
+    paymentMethod: "cash" | "online";
+    razorpayData?: RazorpayPaymentData;
+  } | null>(null);
 
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -54,6 +74,46 @@ const Billing = () => {
     setCartItems((prev) => prev.filter((item) => item.id !== id));
   };
 
+
+  // Generate bill — shows customer form first
+  const handleGenerateBill = (subtotal: number, gst: number, total: number) => {
+    setBillTotals({ subtotal, gst, total });
+    setShowCustomerForm(true);
+  };
+
+  // Proceed to payment after customer details are filled
+  const handleProceedToPayment = () => {
+    if (!customerName.trim()) {
+      alert("Please enter customer name");
+      return;
+    }
+    setShowCustomerForm(false);
+    setPaymentModalOpen(true);
+  };
+  // Called by PaymentModal once payment succeeds
+  const handlePaymentSuccess = (
+    method: "cash" | "online",
+    razorpayData?: RazorpayPaymentData
+  ) => {
+    const invoiceNumber = `INV${Date.now().toString().slice(-8)}`;
+    setInvoiceData({ invoiceNumber, paymentMethod: method, razorpayData });
+
+    // Short delay so the success animation in the modal is visible
+    setTimeout(() => {
+      setPaymentModalOpen(false);
+      setShowReceipt(true);
+    }, 1200);
+  };
+
+
+  const handleCloseReceipt = () => {
+    setShowReceipt(false);
+    setInvoiceData(null);
+    // Clear cart and customer details after successful bill
+    setCartItems([]);
+    setCustomerName("");
+    setCustomerPhone("");
+  };
   return (
     <MainLayout>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[calc(100vh-8rem)]">
@@ -69,10 +129,66 @@ const Billing = () => {
               <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-success to-primary flex items-center justify-center glow-success">
                 <Receipt className="h-6 w-6 text-primary-foreground" />
               </div>
-              <div>
                 <h1 className="text-3xl font-bold text-foreground">Billing</h1>
-                <p className="text-muted-foreground">Create new bills quickly</p>
               </div>
+                <p className="text-muted-foreground">Create new bills quickly</p>
+              {/* Customer Details Modal */}
+              <Dialog open={showCustomerForm} onOpenChange={setShowCustomerForm}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="text-xl font-bold gradient-text">
+                      Customer Details
+                    </DialogTitle>
+                  </DialogHeader>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Customer Name</label>
+                      <Input
+                        placeholder="Enter customer name"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        className="bg-white/5 border-white/10"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Phone (Optional)</label>
+                      <Input
+                        placeholder="Customer phone number"
+                        value={customerPhone}
+                        onChange={(e) => setCustomerPhone(e.target.value)}
+                        type="tel"
+                        className="bg-white/5 border-white/10"
+                      />
+                    </div>
+
+                    <div className="flex gap-3 pt-4">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setShowCustomerForm(false);
+                          setCustomerName("");
+                          setCustomerPhone("");
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="glow"
+                        className="flex-1"
+                        onClick={handleProceedToPayment}
+                      >
+                        Continue to Payment
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              </div>
+              {/* Payment Modal */}
+              <PaymentModal
             </div>
 
             <Button variant="glow">
@@ -135,9 +251,44 @@ const Billing = () => {
             items={cartItems}
             onUpdateQuantity={updateQuantity}
             onRemoveItem={removeItem}
+            onGenerateBill={handleGenerateBill}
           />
         </div>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        open={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        items={cartItems}
+        subtotal={billTotals.subtotal}
+        gst={billTotals.gst}
+        total={billTotals.total}
+            customerName={customerName}
+            customerPhone={customerPhone}
+        invoiceNumber={`INV${Date.now().toString().slice(-8)}`}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
+
+      {/* Invoice Receipt */}
+      {showReceipt && invoiceData && (
+        <div className="fixed inset-0 z-50 bg-background">
+          <InvoiceReceipt
+            invoiceNumber={invoiceData.invoiceNumber}
+            customerName={customerName}
+            customerPhone={customerPhone}
+            items={cartItems.map((item) => ({ ...item, category: "General" }))}
+            total={billTotals.total}
+            date={new Date().toLocaleDateString("en-IN", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+            messageSent={false}
+            onClose={handleCloseReceipt}
+          />
+        </div>
+      )}
     </MainLayout>
   );
 };

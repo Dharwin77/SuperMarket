@@ -144,8 +144,8 @@ export default function InvoiceHistory() {
           className="flex items-center justify-between"
         >
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-              <Receipt className="h-6 w-6 text-white" />
+            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Receipt className="h-6 w-6 text-primary" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-foreground">Invoice History</h1>
@@ -159,7 +159,7 @@ export default function InvoiceHistory() {
         {/* Loading State */}
         {loading && (
           <div className="text-center py-12">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-purple-500 border-r-transparent mb-4"></div>
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent mb-4"></div>
             <p className="text-muted-foreground">Loading customers...</p>
           </div>
         )}
@@ -173,7 +173,7 @@ export default function InvoiceHistory() {
             className="space-y-4"
           >
             <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-              <User className="h-5 w-5 text-purple-400" />
+              <User className="h-5 w-5 text-primary" />
               All Customers ({customers.length})
             </h2>
 
@@ -186,7 +186,7 @@ export default function InvoiceHistory() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.05 }}
                   >
-                    <Card className="glass-card border-purple-500/20 hover:border-purple-500/50 transition-all">
+                    <Card className="glass-card border-border hover:border-primary/40 transition-all">
                       <CardContent className="p-6">
                         <div className="space-y-4">
                           {/* Customer Info */}
@@ -211,12 +211,12 @@ export default function InvoiceHistory() {
                                 {customer.total_points}
                               </p>
                             </div>
-                            <div className="glass-card p-3 border border-purple-500/20">
+                            <div className="glass-card p-3 border border-primary/20">
                               <div className="flex items-center gap-2 mb-1">
-                                <Receipt className="h-4 w-4 text-purple-400" />
+                                <Receipt className="h-4 w-4 text-primary" />
                                 <span className="text-xs text-muted-foreground">Purchases</span>
                               </div>
-                              <p className="text-lg font-bold text-purple-400">
+                              <p className="text-lg font-bold text-primary">
                                 {customer.total_purchases}
                               </p>
                             </div>
@@ -233,7 +233,7 @@ export default function InvoiceHistory() {
                           {/* View Button */}
                           <Button
                             onClick={() => viewCustomerInvoices(customer)}
-                            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                            className="w-full bg-primary hover:bg-primary/90"
                             size="sm"
                           >
                             <FileText className="h-4 w-4 mr-2" />
@@ -269,11 +269,11 @@ export default function InvoiceHistory() {
 
       {/* Customer Invoices Dialog */}
       <Dialog open={customerDialogOpen} onOpenChange={setCustomerDialogOpen}>
-        <DialogContent className="sm:max-w-[700px] bg-[#0A0F1E] border-purple-500/30 max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[700px] bg-card border-border max-h-[90vh] overflow-y-auto">
           {selectedCustomer && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                <DialogTitle className="text-xl font-bold text-foreground">
                   {selectedCustomer.customer_name}'s Purchase History
                 </DialogTitle>
               </DialogHeader>
@@ -293,7 +293,7 @@ export default function InvoiceHistory() {
                   </div>
                   <div>
                     <span className="text-muted-foreground">Total Purchases</span>
-                    <p className="font-semibold text-purple-400">
+                    <p className="font-semibold text-primary">
                       {selectedCustomer.total_purchases}
                     </p>
                   </div>
@@ -306,14 +306,14 @@ export default function InvoiceHistory() {
                 {invoices.map((invoice) => (
                   <Card
                     key={invoice.id}
-                    className="glass-card border-purple-500/20 hover:border-purple-500/50 cursor-pointer transition-all"
+                    className="glass-card border-border hover:border-primary/40 cursor-pointer transition-all"
                     onClick={() => viewInvoice(invoice)}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
                           <div className="flex items-center gap-3">
-                            <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
+                            <Badge className="bg-primary/10 text-primary border-primary/20">
                               {invoice.invoice_number}
                             </Badge>
                             <span className="text-sm text-muted-foreground flex items-center gap-1">
@@ -326,7 +326,7 @@ export default function InvoiceHistory() {
                           </p>
                         </div>
                         <div className="text-right space-y-1">
-                          <p className="text-xl font-bold text-purple-400">
+                          <p className="text-xl font-bold text-primary">
                             ₹{invoice.final_amount.toFixed(0)}
                           </p>
                           <Badge variant="outline" className="text-xs border-green-500/30 text-green-400">
@@ -345,22 +345,22 @@ export default function InvoiceHistory() {
 
       {/* Invoice Detail Dialog */}
       <Dialog open={invoiceDialogOpen} onOpenChange={setInvoiceDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] bg-[#0A0F1E] border-purple-500/30 max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[600px] bg-card border-border max-h-[90vh] overflow-y-auto">
           {selectedInvoice && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                <DialogTitle className="text-xl font-bold text-foreground">
                   Invoice Details
                 </DialogTitle>
               </DialogHeader>
 
               <div className="space-y-4">
                 {/* Header Info */}
-                <div className="glass-card p-4 border border-purple-500/30">
+                <div className="glass-card p-4 border border-primary/20">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">Invoice Number</span>
-                      <p className="font-semibold text-purple-400">
+                      <p className="font-semibold text-primary">
                         {selectedInvoice.invoice_number}
                       </p>
                     </div>
@@ -388,7 +388,7 @@ export default function InvoiceHistory() {
                     {selectedInvoice.items.map((item: any, index: number) => (
                       <div
                         key={index}
-                        className="flex justify-between p-3 rounded-lg bg-[#1A1F2E] border border-white/5"
+                        className="flex justify-between p-3 rounded-lg bg-muted border border-border"
                       >
                         <div>
                           <p className="font-medium">{item.name}</p>

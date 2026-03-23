@@ -14,9 +14,10 @@ interface BillingCartProps {
   items: CartItem[];
   onUpdateQuantity: (id: string, quantity: number) => void;
   onRemoveItem: (id: string) => void;
+  onGenerateBill?: (subtotal: number, gst: number, total: number) => void;
 }
 
-export function BillingCart({ items, onUpdateQuantity, onRemoveItem }: BillingCartProps) {
+export function BillingCart({ items, onUpdateQuantity, onRemoveItem, onGenerateBill }: BillingCartProps) {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const gst = subtotal * 0.18;
   const total = subtotal + gst;
@@ -125,8 +126,12 @@ export function BillingCart({ items, onUpdateQuantity, onRemoveItem }: BillingCa
             <Button variant="outline" className="w-full">
               Hold Bill
             </Button>
-            <Button variant="glow" className="w-full">
-              Checkout
+            <Button
+              variant="glow"
+              className="w-full"
+              onClick={() => onGenerateBill?.(subtotal, gst, total)}
+            >
+              Generate Bill
             </Button>
           </div>
         </div>

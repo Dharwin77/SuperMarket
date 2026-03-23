@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ScanLine, Camera, Zap, Upload, Trash2, Package, TrendingUp, Sparkles, Calendar, ShoppingBag } from "lucide-react";
+import { ScanLine, Zap, Upload, Trash2, Package, TrendingUp, Sparkles, Calendar, ShoppingBag } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
 import { useProducts } from "@/hooks/useSupabase";
 import { analyzeImage, analyzeVideo, initializeVision } from "@/services/vision";
 
@@ -23,6 +24,7 @@ const mockProduct = {
 
 const Scanner = () => {
   const { data: products } = useProducts();
+  const navigate = useNavigate();
   const [isScanning, setIsScanning] = useState(false);
   const [scannedProduct, setScannedProduct] = useState<typeof mockProduct | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -35,14 +37,6 @@ const Scanner = () => {
   useEffect(() => {
     initializeVision().then(setVisionReady);
   }, []);
-
-  const handleScan = () => {
-    setIsScanning(true);
-    setTimeout(() => {
-      setIsScanning(false);
-      setScannedProduct(mockProduct);
-    }, 2000);
-  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -74,6 +68,9 @@ const Scanner = () => {
           shelf: 'A3',
           profitMargin: 30,
         });
+      } else {
+        // Clear the product card when no matches found
+        setScannedProduct(null);
       }
     } catch (error) {
       console.error('Error analyzing file:', error);
@@ -102,21 +99,16 @@ const Scanner = () => {
             <div>
               <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
                 Product Scanner
-                {visionReady && <Sparkles className="h-5 w-5 text-yellow-400" />}
               </h1>
               <p className="text-muted-foreground">
                 {visionReady 
-                  ? 'Upload product images/videos for AI-powered recognition' 
+                  ? 'Upload product images/videos for Groq AI-powered recognition' 
                   : 'Scan products with intelligent recognition'
                 }
               </p>
             </div>
           </div>
 
-          <Button variant="glow" onClick={handleScan} disabled={isScanning}>
-            <Camera className="h-4 w-4 mr-2" />
-            {isScanning ? "Scanning..." : "Start Scan"}
-          </Button>
         </motion.div>
 
         {/* Scanner Content */}
@@ -161,15 +153,32 @@ const Scanner = () => {
             {scannedProduct ? (
               <ProductCube product={scannedProduct} />
             ) : (
-              <div className="glass-card p-12 border border-white/10 text-center w-full max-w-md">
-                <div className="h-20 w-20 mx-auto rounded-2xl bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center mb-6">
-                  <ScanLine className="h-10 w-10 text-muted-foreground" />
+              // If analysis was run but no related products were found, show a helpful message
+              analysisResult && Array.isArray(analysisResult.relatedProducts) && analysisResult.relatedProducts.length === 0 ? (
+                <div className="glass-card p-8 border border-white/10 text-center w-full max-w-md">
+                  <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <h3 className="text-xl font-semibold text-foreground mb-2">No Products Available</h3>
+                  <p className="text-muted-foreground mb-6">
+                    There are no products like this in this market. Explore more products to find what you need!
+                  </p>
+                  <div className="flex gap-3 justify-center">
+                    <Button onClick={() => navigate('/products')} className="gap-2">
+                      <ShoppingBag className="h-4 w-4" />
+                      Explore More Products
+                    </Button>
+                    <Button variant="outline" onClick={() => { setSelectedProduct(null); setUploadedImage(null); setAnalysisResult(null); }}>
+                      Try Another
+                    </Button>
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">No Product Scanned</h3>
-                <p className="text-muted-foreground">
-                  Point your camera at a product to see its details in the 3D cube view
-                </p>
-              </div>
+              ) : (
+                <div className="glass-card p-12 border border-white/10 text-center w-full max-w-md">
+                  <h3 className="text-xl font-semibold text-foreground mb-2">No Product Scanned</h3>
+                  <p className="text-muted-foreground">
+                    Point your camera at a product to see its details in the 3D cube view
+                  </p>
+                </div>
+              )
             )}
 
 
@@ -186,10 +195,10 @@ const Scanner = () => {
               className="space-y-6"
             >
               {/* Analysis Summary */}
-              <Card className="glass-panel border-purple-500/30">
+              <Card className="glass-panel border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-purple-500" />
+                    <Sparkles className="h-5 w-5 text-primary" />
                     AI Analysis Results
                   </CardTitle>
                 </CardHeader>
@@ -225,10 +234,10 @@ const Scanner = () => {
 
               {/* Related Products */}
               {analysisResult.relatedProducts.length > 0 && (
-                <Card className="glass-panel border-cyan-500/30">
+                <Card className="glass-panel border-border">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-cyan-500" />
+                      <TrendingUp className="h-5 w-5 text-primary" />
                       Related Products in Store
                       <Badge variant="outline" className="ml-auto">
                         {analysisResult.relatedProducts.length} items
@@ -243,14 +252,14 @@ const Scanner = () => {
                           initial={{ opacity: 0, scale: 0.9 }}
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ delay: index * 0.1 }}
-                          className="glass-card p-4 border border-white/10 hover:border-cyan-500/50 transition-all cursor-pointer group"
+                          className="glass-card p-4 border border-border hover:border-primary/40 transition-all cursor-pointer group"
                           onClick={() => {
                             setSelectedProduct(product);
                             setDetailsOpen(true);
                           }}
                         >
                           {/* Product Image */}
-                          <div className="aspect-square bg-gradient-to-br from-cyan-500/20 to-purple-500/20 rounded-xl flex items-center justify-center mb-3 overflow-hidden">
+                          <div className="aspect-square bg-muted rounded-xl flex items-center justify-center mb-3 overflow-hidden">
                             {product.image_url ? (
                               <img 
                                 src={product.image_url} 
@@ -260,18 +269,18 @@ const Scanner = () => {
                                   e.currentTarget.style.display = 'none';
                                   const parent = e.currentTarget.parentElement;
                                   if (parent) {
-                                    parent.innerHTML = '<svg class="h-8 w-8 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>';
+                                    parent.innerHTML = '<svg class="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>';
                                   }
                                 }}
                               />
                             ) : (
-                              <Package className="h-8 w-8 text-cyan-400" />
+                              <Package className="h-8 w-8 text-primary" />
                             )}
                           </div>
 
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex-1">
-                              <h3 className="font-semibold text-foreground group-hover:text-cyan-400 transition-colors">
+                              <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
                                 {product.name}
                               </h3>
                               <p className="text-xs text-muted-foreground mt-1">{product.category}</p>
@@ -319,32 +328,32 @@ const Scanner = () => {
 
         {/* Product Details Dialog */}
         <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-          <DialogContent className="sm:max-w-[400px] bg-[#0A0F1E] border-cyan-500/30">
+          <DialogContent className="sm:max-w-[360px] max-h-[90vh] overflow-y-auto bg-card border-border">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+              <DialogTitle className="text-lg font-bold text-foreground">
                 Product Details
               </DialogTitle>
             </DialogHeader>
             {selectedProduct && (
-              <div className="space-y-3 mt-3">
+              <div className="space-y-2 mt-2">
                 {/* Product Image */}
-                <div className="aspect-square bg-gradient-to-br from-cyan-500/20 to-purple-500/20 rounded-xl flex items-center justify-center overflow-hidden">
+                <div className="h-48 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
                   {selectedProduct.image_url ? (
                     <img 
                       src={selectedProduct.image_url} 
                       alt={selectedProduct.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   ) : (
-                    <Package className="h-24 w-24 text-cyan-400" />
+                    <Package className="h-16 w-16 text-primary" />
                   )}
                 </div>
 
                 {/* Product Info */}
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div>
                     <Label className="text-xs text-muted-foreground">Product Name</Label>
-                    <p className="text-lg font-semibold text-cyan-300">{selectedProduct.name}</p>
+                    <p className="text-base font-semibold text-foreground">{selectedProduct.name}</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -354,18 +363,18 @@ const Scanner = () => {
                     </div>
                     <div>
                       <Label className="text-xs text-muted-foreground">Price</Label>
-                      <p className="text-2xl font-bold gradient-text">₹{selectedProduct.price?.toFixed(2)}</p>
+                      <p className="text-xl font-bold gradient-text">₹{selectedProduct.price?.toFixed(2)}</p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label className="text-xs text-muted-foreground">Barcode</Label>
-                      <p className="text-sm font-mono text-cyan-300">{selectedProduct.barcode}</p>
+                      <p className="text-sm font-mono text-foreground">{selectedProduct.barcode}</p>
                     </div>
                     <div>
                       <Label className="text-xs text-muted-foreground">Stock Quantity</Label>
-                      <p className="text-sm font-semibold text-cyan-300 flex items-center gap-1">
+                      <p className="text-sm font-semibold text-foreground flex items-center gap-1">
                         <Package className="h-3 w-3" />
                         {selectedProduct.stock}
                       </p>
@@ -377,7 +386,7 @@ const Scanner = () => {
                       {selectedProduct.imported_date && (
                         <div>
                           <Label className="text-xs text-muted-foreground">Imported Date</Label>
-                          <p className="text-sm text-cyan-300 flex items-center gap-1">
+                          <p className="text-sm text-foreground flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             {new Date(selectedProduct.imported_date).toLocaleDateString()}
                           </p>
@@ -386,7 +395,7 @@ const Scanner = () => {
                       {selectedProduct.expiry_date && (
                         <div>
                           <Label className="text-xs text-muted-foreground">Expiry Date</Label>
-                          <p className="text-sm text-cyan-300 flex items-center gap-1">
+                          <p className="text-sm text-foreground flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             {new Date(selectedProduct.expiry_date).toLocaleDateString()}
                           </p>
@@ -401,11 +410,11 @@ const Scanner = () => {
                       <div className="flex items-center gap-2 mt-1">
                         <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                           <div 
-                            className="h-full bg-gradient-to-r from-cyan-500 to-purple-500"
+                            className="h-full bg-primary"
                             style={{ width: `${Math.min(100, Math.round(selectedProduct.relevanceScore))}%` }}
                           />
                         </div>
-                        <span className="text-sm font-semibold text-cyan-300">
+                        <span className="text-sm font-semibold text-foreground">
                           {Math.min(100, Math.round(selectedProduct.relevanceScore))}%
                         </span>
                       </div>
@@ -414,7 +423,7 @@ const Scanner = () => {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-2 pt-3">
                   <Button
                     onClick={() => {
                       setScannedProduct({
@@ -427,7 +436,7 @@ const Scanner = () => {
                       });
                       setDetailsOpen(false);
                     }}
-                    className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90"
+                    className="flex-1 bg-primary hover:bg-primary/90"
                   >
                     <ShoppingBag className="mr-2 h-4 w-4" />
                     Add to Bill
@@ -435,7 +444,7 @@ const Scanner = () => {
                   <Button
                     variant="outline"
                     onClick={() => setDetailsOpen(false)}
-                    className="border-cyan-500/30 hover:bg-cyan-500/10"
+                    className="border-border hover:bg-accent"
                   >
                     Close
                   </Button>

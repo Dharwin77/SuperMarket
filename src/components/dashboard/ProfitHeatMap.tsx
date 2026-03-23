@@ -37,7 +37,7 @@ export function ProfitHeatMap() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="glass-card p-6 border border-white/10"
+        className="glass-card p-6"
       >
         <p className="text-center text-muted-foreground">Loading profit data...</p>
       </motion.div>
@@ -50,7 +50,7 @@ export function ProfitHeatMap() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="glass-card p-6 border border-white/10"
+        className="glass-card p-6"
       >
         <p className="text-center text-muted-foreground">No product data available</p>
       </motion.div>
@@ -61,7 +61,7 @@ export function ProfitHeatMap() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
-      className="glass-card p-6 border border-white/10"
+      className="glass-card p-6"
     >
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -93,7 +93,7 @@ export function ProfitHeatMap() {
             transition={{ delay: 0.4 + index * 0.05 }}
             className={`
               relative p-4 rounded-xl bg-gradient-to-br ${product.color}
-              border border-white/10 overflow-hidden group cursor-pointer
+              border border-border overflow-hidden group cursor-pointer
               hover:scale-105 transition-transform duration-300
             `}
           >
@@ -101,7 +101,7 @@ export function ProfitHeatMap() {
               <p className="text-sm font-medium text-foreground">{product.name}</p>
               <p className="text-2xl font-bold text-foreground">{product.profit}%</p>
             </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-background/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </motion.div>
         ))}
       </div>

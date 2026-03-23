@@ -120,7 +120,7 @@ export default function BillView() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 py-8 px-4 print:py-0 print:bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-sky-50 to-cyan-50 py-8 px-4 print:py-0 print:bg-white">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -132,7 +132,7 @@ export default function BillView() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Home
           </Button>
-          <Button onClick={handlePrint} className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105">
+          <Button onClick={handlePrint} className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105">
             <Printer className="mr-2 h-4 w-4" />
             Print
           </Button>
@@ -140,8 +140,8 @@ export default function BillView() {
 
         {/* Bill Content */}
         <Card className="shadow-2xl print:shadow-none print:border-0 bg-white border-0 overflow-hidden">
-          <CardHeader className="border-b-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white relative overflow-hidden print:bg-white">
-            <div className="absolute inset-0 bg-black opacity-5 print:hidden"></div>
+          <CardHeader className="border-b-0 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-600 text-white relative overflow-hidden print:bg-white">
+            <div className="absolute inset-0 bg-white opacity-10 print:hidden"></div>
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 print:hidden"></div>
             <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24 print:hidden"></div>
             <div className="text-center space-y-3 relative z-10 py-8 print:text-gray-900 print:py-4">
@@ -158,14 +158,14 @@ export default function BillView() {
 
           <CardContent className="p-8 space-y-8">
             {/* Invoice Details */}
-            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-6 print:bg-gray-50 print:rounded-none">
+            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6 print:bg-gray-50 print:rounded-none">
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <p className="text-sm font-semibold text-indigo-600 uppercase tracking-wide print:text-gray-600">Invoice Number</p>
                   <p className="font-bold text-2xl text-gray-900 tracking-tight">{bill.invoiceNumber}</p>
                 </div>
                 <div className="text-right space-y-2">
-                  <p className="text-sm font-semibold text-purple-600 uppercase tracking-wide print:text-gray-600">Date & Time</p>
+                  <p className="text-sm font-semibold text-cyan-600 uppercase tracking-wide print:text-gray-600">Date & Time</p>
                   <p className="font-bold text-lg text-gray-900">{bill.date}</p>
                   <p className="text-sm text-gray-600 font-medium">{bill.time}</p>
                 </div>
@@ -199,7 +199,7 @@ export default function BillView() {
               <div className="overflow-x-auto rounded-xl border-2 border-gray-100 print:border print:border-gray-300">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white print:bg-gray-200 print:text-gray-900">
+                    <tr className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white print:bg-gray-200 print:text-gray-900">
                       <th className="text-left py-4 px-6 font-bold text-base">Item</th>
                       <th className="text-center py-4 px-6 font-bold text-base">Qty</th>
                       <th className="text-right py-4 px-6 font-bold text-base">Price</th>
@@ -237,7 +237,7 @@ export default function BillView() {
                   <span className="font-bold text-green-700 text-xl">-₹{bill.discountAmount.toFixed(2)}</span>
                 </div>
               )}
-              <div className="flex justify-between items-center bg-gradient-to-r from-indigo-600 to-purple-600 text-white -mx-6 px-6 py-5 rounded-xl print:bg-gray-200 print:text-gray-900 print:rounded-none print:mx-0">
+              <div className="flex justify-between items-center bg-gradient-to-r from-blue-600 to-cyan-600 text-white -mx-6 px-6 py-5 rounded-xl print:bg-gray-200 print:text-gray-900 print:rounded-none print:mx-0">
                 <span className="text-xl font-bold">Final Total</span>
                 <span className="text-3xl font-extrabold tracking-tight">₹{bill.finalTotal.toFixed(2)}</span>
               </div>
@@ -269,7 +269,7 @@ export default function BillView() {
 
             {/* Footer */}
             <div className="text-center space-y-3 border-t-2 border-dashed border-gray-300 pt-6 mt-6">
-              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-full font-bold text-lg print:bg-gray-200 print:text-gray-900">
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-6 py-3 rounded-full font-bold text-lg print:bg-gray-200 print:text-gray-900">
                 <span className="text-xl print:hidden">✨</span>
                 Thank you for shopping with us!
                 <span className="text-xl print:hidden">✨</span>

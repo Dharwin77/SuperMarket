@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, Package, Barcode, DollarSign, TrendingUp, Sparkles, Zap, ArrowLeft, Coffee, Cookie, Milk, Apple, Wheat, Candy, Minus, Search, ShoppingBag, Calendar, Edit } from "lucide-react";
+import { Plus, Trash2, Package, Barcode, DollarSign, TrendingUp, Zap, ArrowLeft, Coffee, Cookie, Milk, Apple, Wheat, Candy, Minus, Search, ShoppingBag, Calendar, Edit } from "lucide-react";
 import { useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -241,15 +241,12 @@ export default function ProductsExample() {
     <MainLayout>
       <div className="min-h-screen p-8 space-y-8">
       {/* Header */}
-      <div className="glass-panel p-8 rounded-2xl border border-white/10">
+      <div className="glass-panel p-8 rounded-2xl border border-border">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div className="space-y-2 flex-1">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-primary to-secondary glow-primary">
-                <Sparkles className="h-6 w-6 text-primary-foreground" />
-              </div>
               <div>
-                <h1 className="text-4xl font-bold gradient-text">Products</h1>
+                <h1 className="text-4xl font-bold text-foreground">Products</h1>
               </div>
             </div>
             <div className="flex items-center gap-4 mt-4">
@@ -268,6 +265,8 @@ export default function ProductsExample() {
                 name: "",
                 category: "",
                 price: "",
+                cost_price: "",
+                selling_price: "",
                 barcode: "",
                 stock: "",
                 imported_date: "",
@@ -279,7 +278,7 @@ export default function ProductsExample() {
             <DialogTrigger asChild>
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 glow-primary"
+                className="bg-primary hover:bg-primary/90"
                 onClick={() => {
                   setIsEditMode(false);
                   setEditingProductId(null);
@@ -289,9 +288,9 @@ export default function ProductsExample() {
                 Add Product
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] bg-[#0A0F1E] border-cyan-500/30">
+            <DialogContent className="sm:max-w-[600px] bg-card border-border">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                <DialogTitle className="text-2xl font-bold text-foreground">
                   {isEditMode ? "Edit Product" : "Add New Product"}
                 </DialogTitle>
                 <DialogDescription className="text-muted-foreground">
@@ -301,7 +300,7 @@ export default function ProductsExample() {
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-cyan-300">
+                    <Label htmlFor="name" className="text-foreground">
                       Product Name *
                     </Label>
                     <Input
@@ -309,12 +308,12 @@ export default function ProductsExample() {
                       required
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="bg-[#1A1F2E] border-cyan-500/30 focus:border-cyan-500"
+                      className="bg-background border-border"
                       placeholder="Enter product name"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="category" className="text-cyan-300">
+                    <Label htmlFor="category" className="text-foreground">
                       Category *
                     </Label>
                     <Input
@@ -322,14 +321,14 @@ export default function ProductsExample() {
                       required
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      className="bg-[#1A1F2E] border-cyan-500/30 focus:border-cyan-500"
+                      className="bg-background border-border"
                       placeholder="e.g., Electronics, Beverages"
                     />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="price" className="text-cyan-300">
+                    <Label htmlFor="price" className="text-foreground">
                       Price (₹) *
                     </Label>
                     <Input
@@ -339,12 +338,12 @@ export default function ProductsExample() {
                       required
                       value={formData.price}
                       onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                      className="bg-[#1A1F2E] border-cyan-500/30 focus:border-cyan-500"
+                      className="bg-background border-border"
                       placeholder="0.00"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="barcode" className="text-cyan-300">
+                    <Label htmlFor="barcode" className="text-foreground">
                       Barcode *
                     </Label>
                     <Input
@@ -352,14 +351,14 @@ export default function ProductsExample() {
                       required
                       value={formData.barcode}
                       onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-                      className="bg-[#1A1F2E] border-cyan-500/30 focus:border-cyan-500"
+                      className="bg-background border-border"
                       placeholder="Enter barcode"
                     />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="cost_price" className="text-cyan-300">
+                    <Label htmlFor="cost_price" className="text-foreground">
                       Cost Price (₹)
                     </Label>
                     <Input
@@ -368,12 +367,12 @@ export default function ProductsExample() {
                       step="0.01"
                       value={formData.cost_price}
                       onChange={(e) => setFormData({ ...formData, cost_price: e.target.value })}
-                      className="bg-[#1A1F2E] border-cyan-500/30 focus:border-cyan-500"
+                      className="bg-background border-border"
                       placeholder="0.00"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="selling_price" className="text-cyan-300">
+                    <Label htmlFor="selling_price" className="text-foreground">
                       Selling Price (₹)
                     </Label>
                     <Input
@@ -382,14 +381,14 @@ export default function ProductsExample() {
                       step="0.01"
                       value={formData.selling_price}
                       onChange={(e) => setFormData({ ...formData, selling_price: e.target.value })}
-                      className="bg-[#1A1F2E] border-cyan-500/30 focus:border-cyan-500"
+                      className="bg-background border-border"
                       placeholder="0.00"
                     />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="imported_date" className="text-cyan-300">
+                    <Label htmlFor="imported_date" className="text-foreground">
                       Imported Date *
                     </Label>
                     <div className="relative">
@@ -400,16 +399,16 @@ export default function ProductsExample() {
                         required
                         value={formData.imported_date}
                         onChange={(e) => setFormData({ ...formData, imported_date: e.target.value })}
-                        className="bg-[#1A1F2E] border-cyan-500/30 focus:border-cyan-500 pr-10"
+                        className="bg-background border-border pr-10"
                       />
                       <Calendar 
                         onClick={() => importedDateRef.current?.showPicker?.()} 
-                        className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cyan-400 cursor-pointer hover:text-cyan-300" 
+                        className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground" 
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="expiry_date" className="text-cyan-300">
+                    <Label htmlFor="expiry_date" className="text-foreground">
                       Expiry Date *
                     </Label>
                     <div className="relative">
@@ -420,17 +419,17 @@ export default function ProductsExample() {
                         required
                         value={formData.expiry_date}
                         onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
-                        className="bg-[#1A1F2E] border-cyan-500/30 focus:border-cyan-500 pr-10"
+                        className="bg-background border-border pr-10"
                       />
                       <Calendar 
                         onClick={() => expiryDateRef.current?.showPicker?.()} 
-                        className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cyan-400 cursor-pointer hover:text-cyan-300" 
+                        className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground" 
                       />
                     </div>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="stock" className="text-cyan-300">
+                  <Label htmlFor="stock" className="text-foreground">
                     Quantity *
                   </Label>
                   <Input
@@ -439,12 +438,12 @@ export default function ProductsExample() {
                     required
                     value={formData.stock}
                     onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                    className="bg-[#1A1F2E] border-cyan-500/30 focus:border-cyan-500"
+                    className="bg-background border-border"
                     placeholder="0"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="image_url" className="text-cyan-300">
+                  <Label htmlFor="image_url" className="text-foreground">
                     Product Image URL
                   </Label>
                   <Input
@@ -452,7 +451,7 @@ export default function ProductsExample() {
                     type="url"
                     value={formData.image_url}
                     onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                    className="bg-[#1A1F2E] border-cyan-500/30 focus:border-cyan-500"
+                    className="bg-background border-border"
                     placeholder="https://example.com/product-image.jpg"
                   />
                   <p className="text-xs text-muted-foreground">
@@ -464,14 +463,14 @@ export default function ProductsExample() {
                     type="button"
                     variant="outline"
                     onClick={() => setOpen(false)}
-                    className="border-cyan-500/30 hover:bg-cyan-500/10"
+                    className="border-border hover:bg-accent"
                   >
                     Cancel
                   </Button>
                   <Button
                     type="submit"
                     disabled={addProduct.isPending || updateProduct.isPending}
-                    className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
+                    className="bg-primary hover:bg-primary/90"
                   >
                     {isEditMode 
                       ? (updateProduct.isPending ? "Updating..." : "Update Product")
@@ -497,7 +496,7 @@ export default function ProductsExample() {
               placeholder="Search products..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 h-14 bg-[#1A1F2E] border-cyan-500/30 focus:border-cyan-500 text-lg"
+              className="pl-12 h-14 glass-input text-lg"
             />
           </div>
 
@@ -513,15 +512,15 @@ export default function ProductsExample() {
                   onClick={() => setSelectedCategory(category)}
                   className={`px-4 py-2.5 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 ${
                     selectedCategory === category
-                      ? "bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg shadow-cyan-500/30"
-                      : "bg-[#1A1F2E] border border-cyan-500/30 hover:border-cyan-500/50 text-muted-foreground hover:text-white"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card border border-border hover:bg-accent text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
                   <span>{category}</span>
                   <Badge 
                     variant="outline" 
-                    className={selectedCategory === category ? "border-white/30 text-white" : "border-cyan-500/30"}
+                    className={selectedCategory === category ? "border-white/40 text-white" : "border-border"}
                   >
                     {count}
                   </Badge>
@@ -532,7 +531,7 @@ export default function ProductsExample() {
 
           {/* Products Grid */}
           {filteredProducts.length === 0 ? (
-            <Card className="glass-panel border-white/10">
+            <Card className="glass-panel border-border">
               <CardContent className="p-12 text-center">
                 <Package className="h-24 w-24 mx-auto mb-6 text-muted-foreground" />
                 <h3 className="text-2xl font-semibold mb-2">
@@ -548,14 +547,14 @@ export default function ProductsExample() {
               {filteredProducts.map((product) => (
                 <Card 
                   key={product.id} 
-                  className="glass-panel border-white/10 overflow-hidden group hover:border-cyan-500/50 transition-all cursor-pointer"
+                  className="glass-panel border-border overflow-hidden group hover:border-primary/40 transition-all cursor-pointer"
                   onClick={() => {
                     setSelectedProduct(product);
                     setDetailsOpen(true);
                   }}
                 >
                   <CardContent className="p-4">
-                    <div className="aspect-square bg-gradient-to-br from-cyan-500/20 to-purple-500/20 rounded-xl flex items-center justify-center mb-3 overflow-hidden">
+                    <div className="aspect-square bg-muted rounded-xl flex items-center justify-center mb-3 overflow-hidden">
                       {product.image_url ? (
                         <img 
                           src={product.image_url} 
@@ -563,19 +562,19 @@ export default function ProductsExample() {
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
-                            e.currentTarget.parentElement!.innerHTML = '<svg class="h-8 w-8 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>';
+                            e.currentTarget.parentElement!.innerHTML = '<svg class="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>';
                           }}
                         />
                       ) : (
-                        <Package className="h-8 w-8 text-cyan-400" />
+                        <Package className="h-8 w-8 text-primary" />
                       )}
                     </div>
                     
-                    <h3 className="font-semibold text-sm mb-2 group-hover:text-cyan-400 transition-colors line-clamp-1">
+                    <h3 className="font-semibold text-sm mb-2 group-hover:text-primary transition-colors line-clamp-1">
                       {product.name}
                     </h3>
                     
-                    <div className="text-xl font-bold gradient-text mb-2">
+                    <div className="text-xl font-bold text-foreground mb-2">
                       ₹{product.price.toFixed(2)}
                     </div>
                     
@@ -615,32 +614,32 @@ export default function ProductsExample() {
 
         {/* Product Details Dialog */}
         <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-          <DialogContent className="sm:max-w-[400px] bg-[#0A0F1E] border-cyan-500/30">
+          <DialogContent className="sm:max-w-[360px] max-h-[90vh] overflow-y-auto bg-card border-border">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+              <DialogTitle className="text-lg font-bold text-foreground">
                 Product Details
               </DialogTitle>
             </DialogHeader>
             {selectedProduct && (
-              <div className="space-y-3 mt-3">
+              <div className="space-y-3 mt-2">
                 {/* Product Image */}
-                <div className="aspect-square bg-gradient-to-br from-cyan-500/20 to-purple-500/20 rounded-xl flex items-center justify-center overflow-hidden">
+                <div className="h-48 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
                   {selectedProduct.image_url ? (
                     <img 
                       src={selectedProduct.image_url} 
                       alt={selectedProduct.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   ) : (
-                    <Package className="h-24 w-24 text-cyan-400" />
+                    <Package className="h-16 w-16 text-primary" />
                   )}
                 </div>
 
                 {/* Product Info */}
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div>
                     <Label className="text-xs text-muted-foreground">Product Name</Label>
-                    <p className="text-lg font-semibold text-cyan-300">{selectedProduct.name}</p>
+                    <p className="text-base font-semibold text-foreground">{selectedProduct.name}</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -650,18 +649,18 @@ export default function ProductsExample() {
                     </div>
                     <div>
                       <Label className="text-xs text-muted-foreground">Price</Label>
-                      <p className="text-2xl font-bold gradient-text">₹{selectedProduct.price.toFixed(2)}</p>
+                      <p className="text-xl font-bold text-foreground">₹{selectedProduct.price.toFixed(2)}</p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label className="text-xs text-muted-foreground">Barcode</Label>
-                      <p className="text-sm font-mono text-cyan-300">{selectedProduct.barcode}</p>
+                      <p className="text-sm font-mono text-foreground">{selectedProduct.barcode}</p>
                     </div>
                     <div>
                       <Label className="text-xs text-muted-foreground">Stock Quantity</Label>
-                      <p className="text-sm font-semibold text-cyan-300 flex items-center gap-1">
+                      <p className="text-sm font-semibold text-foreground flex items-center gap-1">
                         <Package className="h-3 w-3" />
                         {selectedProduct.stock}
                       </p>
@@ -681,7 +680,7 @@ export default function ProductsExample() {
                       {selectedProduct.selling_price && (
                         <div>
                           <Label className="text-xs text-muted-foreground">Selling Price</Label>
-                          <p className="text-sm font-semibold text-cyan-400">
+                          <p className="text-sm font-semibold text-primary">
                             ₹{selectedProduct.selling_price.toFixed(2)}
                           </p>
                         </div>
@@ -694,7 +693,7 @@ export default function ProductsExample() {
                       {selectedProduct.imported_date && (
                         <div>
                           <Label className="text-xs text-muted-foreground">Imported Date</Label>
-                          <p className="text-sm text-cyan-300 flex items-center gap-1">
+                          <p className="text-sm text-foreground flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             {new Date(selectedProduct.imported_date).toLocaleDateString()}
                           </p>
@@ -703,7 +702,7 @@ export default function ProductsExample() {
                       {selectedProduct.expiry_date && (
                         <div>
                           <Label className="text-xs text-muted-foreground">Expiry Date</Label>
-                          <p className="text-sm text-cyan-300 flex items-center gap-1">
+                          <p className="text-sm text-foreground flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             {new Date(selectedProduct.expiry_date).toLocaleDateString()}
                           </p>
@@ -714,29 +713,19 @@ export default function ProductsExample() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-2 pt-3">
                   <Button
                     onClick={() => handleEdit(selectedProduct)}
                     variant="outline"
-                    className="border-cyan-500/30 hover:bg-cyan-500/10"
+                    className="border-border hover:bg-accent"
                   >
                     <Edit className="mr-2 h-4 w-4" />
                     Edit
                   </Button>
                   <Button
-                    onClick={() => {
-                      addToCart(selectedProduct);
-                      setDetailsOpen(false);
-                    }}
-                    className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90"
-                  >
-                    <ShoppingBag className="mr-2 h-4 w-4" />
-                    Add to Cart
-                  </Button>
-                  <Button
                     variant="outline"
                     onClick={() => setDetailsOpen(false)}
-                    className="border-cyan-500/30 hover:bg-cyan-500/10"
+                    className="border-border hover:bg-accent"
                   >
                     Close
                   </Button>
@@ -748,14 +737,14 @@ export default function ProductsExample() {
 
         {/* Right Side - Cart Sidebar */}
         <div className="w-96">
-          <Card className="glass-panel border-cyan-500/30 sticky top-8">
-            <CardHeader className="border-b border-white/10">
+          <Card className="glass-panel border-border sticky top-8">
+            <CardHeader className="border-b border-border">
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-500">
-                  <ShoppingBag className="h-6 w-6" />
+                <div className="p-3 rounded-xl bg-primary/10">
+                  <ShoppingBag className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                  <CardTitle className="text-xl text-foreground">
                     Selected Items
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
@@ -777,12 +766,12 @@ export default function ProductsExample() {
                   {/* Cart Items */}
                   <div className="space-y-3 max-h-[400px] overflow-y-auto">
                     {cart.map((item) => (
-                      <div key={item.id} className="bg-[#1A1F2E] rounded-xl p-4 border border-cyan-500/20">
+                      <div key={item.id} className="bg-muted rounded-xl p-4 border border-border">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1">
                             <h4 className="font-semibold text-sm">{item.name}</h4>
-                            <p className="text-xs text-cyan-400 mt-1">₹{item.price.toFixed(2)} each</p>
-                            <Badge variant="outline" className="text-xs mt-1 border-cyan-500/30">
+                            <p className="text-xs text-primary mt-1">₹{item.price.toFixed(2)} each</p>
+                            <Badge variant="outline" className="text-xs mt-1 border-border">
                               {item.category}
                             </Badge>
                           </div>
@@ -802,7 +791,7 @@ export default function ProductsExample() {
                               variant="outline"
                               size="icon"
                               onClick={() => updateQuantity(item.id, -1)}
-                              className="h-8 w-8 border-cyan-500/30 hover:bg-cyan-500/10"
+                              className="h-8 w-8 border-border hover:bg-accent"
                             >
                               <Minus className="h-4 w-4" />
                             </Button>
@@ -813,14 +802,14 @@ export default function ProductsExample() {
                               variant="outline"
                               size="icon"
                               onClick={() => updateQuantity(item.id, 1)}
-                              className="h-8 w-8 border-cyan-500/30 hover:bg-cyan-500/10"
+                              className="h-8 w-8 border-border hover:bg-accent"
                             >
                               <Plus className="h-4 w-4" />
                             </Button>
                           </div>
                           <div className="text-right">
                             <p className="text-xs text-muted-foreground">Subtotal</p>
-                            <p className="text-lg font-bold text-cyan-400">
+                            <p className="text-lg font-bold text-primary">
                               ₹{(item.price * item.quantity).toFixed(2)}
                             </p>
                           </div>
@@ -830,7 +819,7 @@ export default function ProductsExample() {
                   </div>
 
                   {/* Cart Summary */}
-                  <div className="border-t border-white/10 pt-4 space-y-3">
+                  <div className="border-t border-border pt-4 space-y-3">
                     <div className="flex justify-between text-lg">
                       <span className="text-muted-foreground">Subtotal</span>
                       <span className="font-semibold">₹{cartTotal.toFixed(2)}</span>
@@ -846,21 +835,21 @@ export default function ProductsExample() {
                       <span>+{cart.reduce((sum, item) => sum + item.quantity, 0)} items</span>
                     </div>
                     
-                    <div className="flex justify-between text-2xl font-bold pt-3 border-t border-white/10">
+                    <div className="flex justify-between text-2xl font-bold pt-3 border-t border-border">
                       <span>Total</span>
-                      <span className="gradient-text">₹{(cartTotal * 1.18).toFixed(2)}</span>
+                      <span className="text-foreground">₹{(cartTotal * 1.18).toFixed(2)}</span>
                     </div>
 
                     <div className="flex gap-3 pt-4">
                       <Button
                         variant="outline"
-                        className="flex-1 border-cyan-500/30 hover:bg-cyan-500/10"
+                        className="flex-1 border-border hover:bg-accent"
                         onClick={() => setCart([])}
                       >
                         Clear All
                       </Button>
                       <Button
-                        className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
+                        className="flex-1 bg-primary hover:bg-primary/90"
                         disabled={cart.length === 0}
                       >
                         Checkout

@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Bot, User, Send, X, MessageSquare, Minimize2, Sparkles } from "lucide-react";
+import { Bot, User, Send, X, Minimize2 } from "lucide-react";
 import { useProducts } from "@/hooks/useSupabase";
 import { motion, AnimatePresence } from "framer-motion";
-import { sendMessageToGemini, initializeGemini, isGeminiAvailable } from "@/services/gemini";
+import { sendMessageToGemini, initializeGemini } from "@/services/gemini";
+import { isRelatedToSupermarket, getOfftopicSuggestion } from "@/lib/supermarketFilter";
 
 interface ChatMessage {
   id: string;
@@ -32,13 +32,13 @@ export function ChatSidebar({ isOpen, onClose }: ChatSidebarProps) {
   const [chatInput, setChatInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [geminiReady, setGeminiReady] = useState(false);
+  const [aiReady, setAiReady] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Initialize Gemini on component mount
+    // Initialize AI service on component mount
     initializeGemini().then((initialized) => {
-      setGeminiReady(initialized);
+      setAiReady(initialized);
     });
   }, []);
 
@@ -61,10 +61,22 @@ export function ChatSidebar({ isOpen, onClose }: ChatSidebarProps) {
     setChatMessages(prev => [...prev, userMessage]);
     const currentInput = chatInput;
     setChatInput("");
+    // Enforce Supermarkt-only queries
+    if (!isRelatedToSupermarket(currentInput, products || [])) {
+      const suggestionMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: getOfftopicSuggestion(),
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, suggestionMsg]);
+      return;
+    }
+
     setIsTyping(true);
 
     try {
-      // Send message to Gemini with product context
+      // Send message with product context
       const aiResponseText = await sendMessageToGemini(currentInput, {
         products: products || [],
         conversationHistory: chatMessages
@@ -102,7 +114,7 @@ export function ChatSidebar({ isOpen, onClose }: ChatSidebarProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/70 z-40"
+            className="fixed inset-0 bg-slate-500/25 z-40"
           />
           
           {/* Chat Sidebar - Full screen on mobile, large on desktop */}
@@ -111,21 +123,19 @@ export function ChatSidebar({ isOpen, onClose }: ChatSidebarProps) {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className={`fixed right-0 top-0 h-screen z-50 ${isMinimized ? 'w-80' : 'w-full lg:w-[600px]'} glass-panel border-l border-purple-500/30`}
+            className={`fixed right-0 top-0 h-screen z-50 ${isMinimized ? 'w-80' : 'w-full lg:w-[600px]'} bg-card border-l border-border shadow-lg`}
           >
             <div className="flex flex-col h-full">
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-white/10">
+              <div className="flex items-center justify-between p-4 border-b border-border">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
-                    <Bot className="h-5 w-5 text-white" />
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Bot className="h-5 w-5 text-primary" />
                   </div>
                   {!isMinimized && (
                     <div>
-                      <h2 className="font-bold text-lg gradient-text flex items-center gap-2">
-                        Chat Assistant
-                        {geminiReady && <Sparkles className="h-4 w-4 text-yellow-400" />}
-                      </h2>
+                      <h2 className="font-bold text-lg text-foreground">Support Chat</h2>
+                      <p className="text-xs text-muted-foreground">{aiReady ? "Groq Online" : "Fallback Mode"}</p>
                     </div>
                   )}
                 </div>
@@ -134,7 +144,7 @@ export function ChatSidebar({ isOpen, onClose }: ChatSidebarProps) {
                     variant="ghost"
                     size="icon"
                     onClick={() => setIsMinimized(!isMinimized)}
-                    className="hover:bg-purple-500/10"
+                    className="hover:bg-accent"
                   >
                     <Minimize2 className="h-4 w-4" />
                   </Button>
@@ -142,7 +152,7 @@ export function ChatSidebar({ isOpen, onClose }: ChatSidebarProps) {
                     variant="ghost"
                     size="icon"
                     onClick={onClose}
-                    className="hover:bg-purple-500/10"
+                    className="hover:bg-accent"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -159,16 +169,16 @@ export function ChatSidebar({ isOpen, onClose }: ChatSidebarProps) {
                         className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
                         {message.role === 'assistant' && (
-                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                            <Bot className="h-4 w-4 text-white" />
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Bot className="h-4 w-4 text-primary" />
                           </div>
                         )}
                         
                         <div
                           className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                             message.role === 'user'
-                              ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
-                              : 'bg-[#1A1F2E] border border-purple-500/30'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted border border-border'
                           }`}
                         >
                           <p className="text-sm leading-relaxed whitespace-pre-line">{message.content}</p>
@@ -178,8 +188,8 @@ export function ChatSidebar({ isOpen, onClose }: ChatSidebarProps) {
                         </div>
 
                         {message.role === 'user' && (
-                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
-                            <User className="h-4 w-4 text-white" />
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                            <User className="h-4 w-4 text-primary-foreground" />
                           </div>
                         )}
                       </div>
@@ -187,14 +197,14 @@ export function ChatSidebar({ isOpen, onClose }: ChatSidebarProps) {
 
                     {isTyping && (
                       <div className="flex gap-3 justify-start">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                          <Bot className="h-4 w-4 text-white" />
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Bot className="h-4 w-4 text-primary" />
                         </div>
-                        <div className="bg-[#1A1F2E] border border-purple-500/30 rounded-2xl px-4 py-3">
+                        <div className="bg-muted border border-border rounded-2xl px-4 py-3">
                           <div className="flex gap-1">
-                            <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                            <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                            <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                           </div>
                         </div>
                       </div>
@@ -204,7 +214,7 @@ export function ChatSidebar({ isOpen, onClose }: ChatSidebarProps) {
                   </div>
 
                   {/* Chat Input */}
-                  <div className="p-4 border-t border-white/10">
+                  <div className="p-4 border-t border-border">
                     <div className="flex gap-2">
                       <Input
                         type="text"
@@ -212,13 +222,13 @@ export function ChatSidebar({ isOpen, onClose }: ChatSidebarProps) {
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                        className="flex-1 bg-[#1A1F2E] border-purple-500/30 focus:border-purple-500"
+                        className="flex-1"
                         disabled={isTyping}
                       />
                       <Button
                         onClick={handleSendMessage}
                         disabled={!chatInput.trim() || isTyping}
-                        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                        className="bg-primary hover:bg-primary/90"
                       >
                         <Send className="h-4 w-4" />
                       </Button>

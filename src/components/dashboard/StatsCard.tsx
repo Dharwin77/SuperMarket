@@ -13,17 +13,17 @@ interface StatsCardProps {
 }
 
 const gradientStyles = {
-  primary: "from-primary/20 to-primary/5 border-primary/30 glow-primary",
-  secondary: "from-secondary/20 to-secondary/5 border-secondary/30 glow-secondary",
-  success: "from-success/20 to-success/5 border-success/30 glow-success",
-  warning: "from-warning/20 to-warning/5 border-warning/30",
+  primary: "bg-card border-primary/20",
+  secondary: "bg-card border-border",
+  success: "bg-card border-success/20",
+  warning: "bg-card border-warning/30",
 };
 
 const iconStyles = {
-  primary: "from-primary to-primary/70",
-  secondary: "from-secondary to-secondary/70",
-  success: "from-success to-success/70",
-  warning: "from-warning to-warning/70",
+  primary: "bg-primary/10",
+  secondary: "bg-secondary",
+  success: "bg-success/10",
+  warning: "bg-warning/10",
 };
 
 export function StatsCard({
@@ -41,7 +41,7 @@ export function StatsCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
       className={cn(
-        "glass-card p-6 bg-gradient-to-br border",
+        "glass-card p-6 border",
         gradientStyles[gradient]
       )}
     >
@@ -63,11 +63,11 @@ export function StatsCard({
         
         <div
           className={cn(
-            "h-12 w-12 rounded-xl bg-gradient-to-br flex items-center justify-center",
+            "h-12 w-12 rounded-xl flex items-center justify-center",
             iconStyles[gradient]
           )}
         >
-          <Icon className="h-6 w-6 text-primary-foreground" />
+          <Icon className="h-6 w-6 text-primary" />
         </div>
       </div>
     </motion.div>

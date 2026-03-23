@@ -9,26 +9,26 @@
 
 @layer base {
   :root {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    --background: 210 33% 98%;
+    --foreground: 222 47% 11%;
 
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 222 47% 8%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 180 70% 50%;
-    --primary-foreground: 222 47% 6%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 270 60% 60%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 222 30% 15%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 270 60% 55%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 210 40% 94%;
+    --accent-foreground: 222 47% 11%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 210 40% 98%;
@@ -37,41 +37,41 @@
     --success-foreground: 210 40% 98%;
 
     --warning: 38 92% 50%;
-    --warning-foreground: 222 47% 6%;
+    --warning-foreground: 222 47% 11%;
 
-    --border: 222 30% 18%;
-    --input: 222 30% 18%;
-    --ring: 180 70% 50%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
 
     --radius: 1rem;
 
-    /* Glass effects */
-    --glass-bg: 222 47% 12% / 0.6;
-    --glass-border: 210 40% 98% / 0.1;
-    --glass-glow: 180 70% 50% / 0.15;
+    /* Surface effects */
+    --glass-bg: 0 0% 100% / 0.92;
+    --glass-border: 214 32% 91% / 1;
+    --glass-glow: 221 83% 53% / 0.06;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(180 70% 50%), hsl(200 80% 45%));
-    --gradient-secondary: linear-gradient(135deg, hsl(270 60% 60%), hsl(290 70% 50%));
+    --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%), hsl(215 85% 60%));
+    --gradient-secondary: linear-gradient(135deg, hsl(210 40% 96%), hsl(210 40% 92%));
     --gradient-success: linear-gradient(135deg, hsl(160 84% 39%), hsl(140 70% 45%));
     --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%), hsl(25 90% 55%));
     --gradient-danger: linear-gradient(135deg, hsl(0 72% 51%), hsl(350 80% 45%));
-    --gradient-glass: linear-gradient(135deg, hsl(var(--glass-bg)), hsl(222 47% 8% / 0.4));
+    --gradient-glass: linear-gradient(135deg, hsl(var(--glass-bg)), hsl(0 0% 100%));
 
     /* Shadows */
-    --shadow-glow-primary: 0 0 40px hsl(180 70% 50% / 0.3);
-    --shadow-glow-secondary: 0 0 40px hsl(270 60% 60% / 0.3);
-    --shadow-glow-success: 0 0 40px hsl(160 84% 39% / 0.3);
-    --shadow-elevated: 0 20px 50px -10px hsl(222 47% 2% / 0.8);
+    --shadow-glow-primary: 0 6px 18px hsl(221 83% 53% / 0.1);
+    --shadow-glow-secondary: 0 6px 18px hsl(215 16% 47% / 0.08);
+    --shadow-glow-success: 0 6px 18px hsl(160 84% 39% / 0.12);
+    --shadow-elevated: 0 8px 24px -12px hsl(222 47% 11% / 0.18);
 
-    --sidebar-background: 222 47% 7%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 180 70% 50%;
-    --sidebar-primary-foreground: 222 47% 6%;
-    --sidebar-accent: 222 30% 15%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 30% 18%;
-    --sidebar-ring: 180 70% 50%;
+    --sidebar-background: 210 38% 95%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 210 45% 92%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 221 83% 53%;
   }
 }
 
@@ -88,33 +88,37 @@
 
 @layer utilities {
   .glass-panel {
-    @apply bg-card/60 backdrop-blur-xl border border-white/10 shadow-xl;
+    @apply bg-card border border-border shadow-sm;
   }
 
   .glass-card {
-    @apply bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl;
+    @apply bg-card border border-border rounded-xl shadow-sm;
+  }
+
+  .glass-input {
+    @apply bg-background border-border;
   }
 
   .glow-primary {
-    box-shadow: var(--shadow-glow-primary);
+    box-shadow: none;
   }
 
   .glow-secondary {
-    box-shadow: var(--shadow-glow-secondary);
+    box-shadow: none;
   }
 
   .glow-success {
-    box-shadow: var(--shadow-glow-success);
+    box-shadow: none;
   }
 
   .gradient-text {
-    @apply bg-clip-text text-transparent;
-    background-image: var(--gradient-primary);
+    @apply text-foreground;
+    background-image: none;
   }
 
   .gradient-text-secondary {
-    @apply bg-clip-text text-transparent;
-    background-image: var(--gradient-secondary);
+    @apply text-foreground;
+    background-image: none;
   }
 
   .pulse-glow {

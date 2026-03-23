@@ -50,11 +50,11 @@ const Settings = () => {
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-4"
         >
-          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center glow-primary">
-            <SettingsIcon className="h-6 w-6 text-primary-foreground" />
+          <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+            <SettingsIcon className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold gradient-text">Settings</h1>
+            <h1 className="text-3xl font-bold text-foreground">Settings</h1>
             <p className="text-muted-foreground">Configure your store preferences</p>
           </div>
         </motion.div>
@@ -65,11 +65,11 @@ const Settings = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="glass-panel border-cyan-500/30">
+          <Card className="glass-panel border-border">
             <CardHeader>
               <div className="flex items-center gap-3">
-                <Store className="h-5 w-5 text-cyan-400" />
-                <CardTitle className="text-xl gradient-text">Store Details</CardTitle>
+                <Store className="h-5 w-5 text-primary" />
+                <CardTitle className="text-xl text-foreground">Store Details</CardTitle>
               </div>
             </CardHeader>
             
@@ -78,28 +78,28 @@ const Settings = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Store Name */}
                   <div className="space-y-2">
-                    <Label htmlFor="storeName" className="text-cyan-300">
+                    <Label htmlFor="storeName" className="text-foreground">
                       Store Name
                     </Label>
                     <Input
                       id="storeName"
                       value={formData.storeName}
                       onChange={(e) => setFormData({ ...formData, storeName: e.target.value })}
-                      className="bg-[#1A1F2E] border-cyan-500/30 focus:border-cyan-500"
+                      className="bg-background border-border"
                       required
                     />
                   </div>
 
                   {/* GST Number */}
                   <div className="space-y-2">
-                    <Label htmlFor="gstNumber" className="text-cyan-300">
+                    <Label htmlFor="gstNumber" className="text-foreground">
                       GST Number
                     </Label>
                     <Input
                       id="gstNumber"
                       value={formData.gstNumber}
                       onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })}
-                      className="bg-[#1A1F2E] border-cyan-500/30 focus:border-cyan-500"
+                      className="bg-background border-border"
                       required
                     />
                   </div>
@@ -107,14 +107,14 @@ const Settings = () => {
 
                 {/* Store Address */}
                 <div className="space-y-2">
-                  <Label htmlFor="storeAddress" className="text-cyan-300">
+                  <Label htmlFor="storeAddress" className="text-foreground">
                     Store Address
                   </Label>
                   <Input
                     id="storeAddress"
                     value={formData.storeAddress}
                     onChange={(e) => setFormData({ ...formData, storeAddress: e.target.value })}
-                    className="bg-[#1A1F2E] border-cyan-500/30 focus:border-cyan-500"
+                    className="bg-background border-border"
                     required
                   />
                 </div>
@@ -122,21 +122,21 @@ const Settings = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Username */}
                   <div className="space-y-2">
-                    <Label htmlFor="username" className="text-cyan-300">
+                    <Label htmlFor="username" className="text-foreground">
                       Username
                     </Label>
                     <Input
                       id="username"
                       value={formData.username}
                       onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                      className="bg-[#1A1F2E] border-cyan-500/30 focus:border-cyan-500"
+                      className="bg-background border-border"
                       required
                     />
                   </div>
 
                   {/* Password */}
                   <div className="space-y-2">
-                    <Label htmlFor="password" className="text-cyan-300">
+                    <Label htmlFor="password" className="text-foreground">
                       Password
                     </Label>
                     <div className="relative">
@@ -145,13 +145,13 @@ const Settings = () => {
                         type={showPassword ? 'text' : 'password'}
                         value={formData.password}
                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        className="bg-[#1A1F2E] border-cyan-500/30 focus:border-cyan-500 pr-10"
+                        className="bg-background border-border pr-10"
                         required
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-cyan-400 transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                       >
                         {showPassword ? (
                           <EyeOff className="h-5 w-5" />
@@ -168,7 +168,7 @@ const Settings = () => {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
+                    className="bg-primary hover:bg-primary/90"
                   >
                     {isLoading ? (
                       <div className="flex items-center gap-2">

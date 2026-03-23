@@ -11,29 +11,42 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   Box,
   MessageSquare,
   CalendarX,
   Receipt,
   LogOut,
+  Users,
+  ClipboardList,
+  CalendarDays,
+  Shield,
+  Truck,
+  Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChatContext } from "./MainLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import type { UserRole } from "@/contexts/AuthContext";
 
 const navItems = [
-  { icon: Box, label: "Products", path: "/products" },
-  { icon: MessageSquare, label: "Chat Assistant", path: null, action: "toggleChat" },
-  { icon: ScanLine, label: "Product Scanner", path: "/scanner" },
-  { icon: CalendarX, label: "Expiry History", path: "/expiry-history" },
-  { icon: ShoppingCart, label: "Billing", path: "/description" },
-  { icon: Receipt, label: "Invoice History", path: "/invoice-history" },
-  { icon: Package, label: "Stock", path: "/stock" },
-  { icon: TrendingUp, label: "Profit Analytics", path: "/profit" },
-  { icon: FileText, label: "Reports", path: "/reports" },
-  { icon: Settings, label: "Settings", path: "/settings" },
+  { icon: Box, label: "Products", path: "/products", roles: ["admin"] as UserRole[] },
+  { icon: MessageSquare, label: "Support Chat", path: null, action: "toggleChat", roles: ["admin", "cashier"] as UserRole[] },
+  { icon: ScanLine, label: "Product Scanner", path: "/scanner", roles: ["admin"] as UserRole[] },
+  { icon: CalendarX, label: "Expiry History", path: "/expiry-history", roles: ["admin"] as UserRole[] },
+  { icon: ShoppingCart, label: "Billing", path: "/description", roles: ["admin", "cashier"] as UserRole[] },
+  { icon: Receipt, label: "Invoice History", path: "/invoice-history", roles: ["admin", "cashier"] as UserRole[] },
+  { icon: Users, label: "Team Members", path: "/team-members", roles: ["cashier", "staff"] as UserRole[] },
+  { icon: Package, label: "Stock", path: "/stock", roles: ["admin"] as UserRole[] },
+  { icon: TrendingUp, label: "Profit Analytics", path: "/profit", roles: ["admin"] as UserRole[] },
+  { icon: FileText, label: "Reports", path: "/reports", roles: ["admin"] as UserRole[] },
+  { icon: Users, label: "Staff Management", path: "/staff-management", roles: ["admin"] as UserRole[] },
+  { icon: ClipboardList, label: "Duties", path: "/duties-management", roles: ["admin"] as UserRole[] },
+  { icon: CalendarDays, label: "Calendar", path: "/calendar-management", roles: ["admin"] as UserRole[] },
+  { icon: Shield, label: "Security", path: "/security-dashboard", roles: ["staff"] as UserRole[], department: "Security" },
+  { icon: Truck, label: "Delivery", path: "/delivery-dashboard", roles: ["staff"] as UserRole[], department: "Delivery" },
+  { icon: Briefcase, label: "Workers", path: "/workers-dashboard", roles: ["staff"] as UserRole[], department: "Workers" },
+  { icon: Settings, label: "Settings", path: "/settings", roles: ["admin"] as UserRole[] },
 ];
 
 export function Sidebar() {
@@ -53,13 +66,13 @@ export function Sidebar() {
       initial={{ x: -20, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen glass-panel border-r border-white/10 transition-all duration-300",
+        "fixed left-0 top-0 z-40 h-screen bg-sidebar border-r border-sidebar-border shadow-sm transition-all duration-300",
         collapsed ? "w-20" : "w-64"
       )}
     >
       <div className="flex h-full flex-col">
         {/* Logo */}
-        <div className="flex h-20 items-center justify-between px-4 border-b border-white/10">
+        <div className="flex h-20 items-center justify-between px-4 border-b border-border">
           <AnimatePresence mode="wait">
             {!collapsed && (
               <motion.div
@@ -68,19 +81,26 @@ export function Sidebar() {
                 exit={{ opacity: 0 }}
                 className="flex items-center gap-3"
               >
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center glow-primary">
-                  <Sparkles className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <div>
-                  <h1 className="font-bold text-lg gradient-text">SuperMarket</h1>
-                </div>
+                <button
+                  onClick={() => navigate('/')}
+                  className="text-left"
+                >
+                  <div>
+                    <h1 className="font-bold text-lg text-foreground">SuperMarket</h1>
+                    {user && (
+                      <p className="text-xs text-muted-foreground capitalize">
+                        {user.role}
+                      </p>
+                    )}
+                  </div>
+                </button>
               </motion.div>
             )}
           </AnimatePresence>
           
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+            className="p-2 rounded-lg hover:bg-accent transition-colors"
           >
             {collapsed ? (
               <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -92,7 +112,20 @@ export function Sidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-2">
-          {navItems.map((item, index) => {
+          {navItems.filter((item) => user && item.roles.includes(user.role)).length === 0 && !collapsed && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="px-4 py-6 text-center"
+            >
+              <p className="text-sm text-muted-foreground">
+                Welcome! Use the dashboard to view your assigned tasks.
+              </p>
+            </motion.div>
+          )}
+          {navItems
+            .filter((item) => user && item.roles.includes(user.role))
+            .map((item, index) => {
             const isActive = item.path ? location.pathname === item.path : false;
             
             const content = (
@@ -103,16 +136,10 @@ export function Sidebar() {
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden",
                   isActive
-                    ? "bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30 glow-primary"
-                    : "hover:bg-white/10"
+                    ? "bg-primary/10 border border-primary/30"
+                    : "hover:bg-accent border border-transparent"
                 )}
               >
-                <div
-                  className={cn(
-                    "absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity",
-                    isActive && "opacity-100"
-                  )}
-                />
                 <item.icon
                   className={cn(
                     "h-5 w-5 relative z-10 transition-colors",
@@ -162,12 +189,12 @@ export function Sidebar() {
         </nav>
 
         {/* Logout Button */}
-        <div className="p-4 border-t border-white/10">
+        <div className="p-4 border-t border-border">
           <Button
             onClick={handleLogout}
             variant="outline"
             className={cn(
-              "w-full border-red-500/30 hover:bg-red-500/10 hover:border-red-500/50 text-red-400 hover:text-red-300",
+              "w-full border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600 hover:text-red-700",
               collapsed ? "px-0" : ""
             )}
           >
@@ -175,9 +202,14 @@ export function Sidebar() {
             {!collapsed && <span>Logout</span>}
           </Button>
           {!collapsed && user && (
-            <p className="text-xs text-muted-foreground text-center mt-2">
-              Logged in as <span className="text-cyan-400">{user.username}</span>
-            </p>
+            <div className="text-xs text-muted-foreground text-center mt-2 space-y-1">
+              <p>
+                Logged in as <span className="text-foreground font-semibold">{user.username}</span>
+              </p>
+              <p className="text-[10px]">
+                Role: <span className="text-primary capitalize">{user.role}</span>
+              </p>
+            </div>
           )}
         </div>
       </div>

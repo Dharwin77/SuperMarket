@@ -1,32 +1,37 @@
-// Ollama Vision Service for Image/Video Analysis
+// Groq Vision Service for Image/Video Analysis
 
-let isOllamaAvailable = false;
+let isVisionApiAvailable = false;
+let selectedVisionModel =
+  import.meta.env.VITE_GROQ_VISION_MODEL ||
+  import.meta.env.VITE_GROQ_MODEL ||
+  'meta-llama/llama-4-scout-17b-16e-instruct';
+
+const GROQ_VISION_API_URL =
+  import.meta.env.VITE_GROQ_API_URL ||
+  'https://api.groq.com/openai/v1/chat/completions';
+
+function getGroqApiKey(): string {
+  return (
+    import.meta.env.VITE_GROQ_API_KEY ||
+    import.meta.env.GROQ_API_KEY ||
+    import.meta.env.VITE_GROK_API_KEY ||
+    ''
+  ).trim();
+}
 
 export async function initializeVision() {
-  console.log('🔍 Checking for Ollama Vision...');
-  
-  try {
-    const response = await fetch('http://localhost:11434/api/tags');
-    if (response.ok) {
-      const data = await response.json();
-      const hasVisionModel = data.models?.some((m: any) => 
-        m.name.includes('llava') || m.name.includes('vision')
-      );
-      
-      if (hasVisionModel) {
-        console.log('✅ Ollama Vision model detected!');
-        isOllamaAvailable = true;
-        return true;
-      } else {
-        console.warn('⚠️ Vision model not found. Install with: ollama pull llava');
-        return false;
-      }
-    }
-  } catch (error) {
-    console.warn('⚠️ Ollama not detected. Using smart fallback.');
+  const apiKey = getGroqApiKey();
+
+  if (!apiKey) {
+    console.warn('⚠️ GROQ API key not found for vision scanning. Using smart fallback detection.');
+    isVisionApiAvailable = false;
+    return false;
   }
-  
-  return false;
+
+  console.log(`✅ Groq Vision configured with model: ${selectedVisionModel}`);
+  console.log('📸 AI-powered image recognition enabled');
+  isVisionApiAvailable = true;
+  return true;
 }
 
 export async function analyzeImage(
@@ -39,40 +44,65 @@ export async function analyzeImage(
   description: string;
 }> {
   // Initialize if not already done
-  if (!isOllamaAvailable) {
+  if (!isVisionApiAvailable) {
     await initializeVision();
   }
 
   // Convert image to base64
   const base64Image = await fileToBase64(imageFile);
 
-  if (isOllamaAvailable) {
+  if (isVisionApiAvailable) {
     try {
-      console.log('🤖 Analyzing image with Ollama Vision...');
-      
-      const response = await fetch('http://localhost:11434/api/generate', {
+      console.log('🤖 Analyzing image with Groq Vision...');
+
+      const response = await fetch(GROQ_VISION_API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getGroqApiKey()}`,
         },
         body: JSON.stringify({
-          model: 'llava',
-          prompt: `Analyze this product image and identify what it is. Be specific about the product type, category, and brand if visible. Respond in this format:
-Product: [product name/type]
-Category: [category]
-Description: [brief description]`,
-          images: [base64Image.split(',')[1]], // Remove data:image/... prefix
-          stream: false
+          model: selectedVisionModel,
+          messages: [
+            {
+              role: 'system',
+              content:
+                'You identify supermarket products from images. If the image is not a physical retail product, respond exactly with Product: NOT_A_PRODUCT. Otherwise reply in 3 lines: Product: <name>, Category: <category>, Description: <brief description>.'
+            },
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: `Identify the product in this image. Prefer exact names when possible. Available inventory sample count: ${products.length}.`
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: base64Image
+                  }
+                }
+              ]
+            }
+          ],
+          temperature: 0.2
         })
       });
 
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Image analyzed by Ollama');
-        return parseVisionResponse(data.response, products);
+        const content = data?.choices?.[0]?.message?.content;
+        if (typeof content === 'string' && content.trim()) {
+          console.log('✅ Image analyzed by Groq Vision');
+          return parseVisionResponse(content, products);
+        }
+        console.warn('⚠️ Groq Vision returned empty output. Using fallback analysis.');
+      } else {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        console.warn(`⚠️ Groq Vision returned ${response.status}: ${errorText}`);
       }
     } catch (error) {
-      console.log('⚠️ Ollama Vision failed, using fallback');
+      console.warn('⚠️ Groq Vision request failed:', error);
     }
   }
 
@@ -96,6 +126,16 @@ function parseVisionResponse(response: string, products: any[]) {
     }
   }
 
+  // Check if AI determined this is not a product
+  if (detectedProduct.includes('NOT_A_PRODUCT') || detectedProduct.toLowerCase().includes('not a product')) {
+    return {
+      detectedProduct: 'Non-product image detected',
+      confidence: 0,
+      relatedProducts: [],
+      description: 'This image does not appear to be a retail product. Please upload a photo of an actual product.'
+    };
+  }
+
   // Find related products
   const relatedProducts = findRelatedProducts(detectedProduct, category, products);
 
@@ -110,39 +150,125 @@ function parseVisionResponse(response: string, products: any[]) {
 function generateFallbackAnalysis(imageFile: File, products: any[]) {
   const fileName = imageFile.name.toLowerCase();
   
-  // Try to detect category from filename
-  const categories = {
-    'chips': 'Snacks',
-    'biscuit': 'Biscuits',
-    'chocolate': 'Chocolates',
-    'drink': 'Cold Drinks',
-    'beverage': 'Cold Drinks',
-    'bread': 'Bread',
-    'milk': 'Dairy',
-    'dairy': 'Dairy',
-    'oil': 'Oil',
-    'rice': 'Rice',
-    'snack': 'Snacks',
+  console.log('🔍 Using smart fallback analysis for:', fileName);
+  
+  // First check if this looks like a non-product file
+  const nonProductKeywords = ['diagram', 'chart', 'screenshot', 'document', 'pdf', 'excel', 'schema', 'drawing', 'graph', 'presentation', 'slide', 'desktop', 'screen'];
+  for (const keyword of nonProductKeywords) {
+    if (fileName.includes(keyword)) {
+      return {
+        detectedProduct: 'Non-product image',
+        confidence: 0,
+        relatedProducts: [],
+        description: '⚠️ This appears to be a diagram, chart, or document rather than a product photo. Please upload an image of an actual retail product.'
+      };
+    }
+  }
+  
+  // Enhanced product keyword mapping with brand names and common products
+  const productKeywords = {
+    // Snacks
+    'munch': { product: 'Munch Chocolate Bar', category: 'Chocolates', brands: ['nestle', 'munch'] },
+    'chips': { product: 'Chips', category: 'Snacks', brands: ['lays', 'kurkure', 'bingo'] },
+    'lays': { product: 'Lays Chips', category: 'Snacks', brands: ['lays'] },
+    'kurkure': { product: 'Kurkure', category: 'Snacks', brands: ['kurkure'] },
+    'biscuit': { product: 'Biscuit', category: 'Biscuits', brands: ['parle', 'britannia', 'sunfeast'] },
+    'cookie': { product: 'Cookies', category: 'Biscuits', brands: [] },
+    
+    // Chocolates
+    'chocolate': { product: 'Chocolate', category: 'Chocolates', brands: ['dairy milk', 'kitkat', 'snickers', 'munch'] },
+    'dairy': { product: 'Dairy Milk', category: 'Chocolates', brands: ['cadbury'] },
+    'kitkat': { product: 'KitKat', category: 'Chocolates', brands: ['nestle'] },
+    'snickers': { product: 'Snickers', category: 'Chocolates', brands: ['snickers'] },
+    'milkybar': { product: 'Milkybar', category: 'Chocolates', brands: ['nestle'] },
+    
+    // Beverages
+    'drink': { product: 'Beverage', category: 'Beverages', brands: ['coca cola', 'pepsi', 'sprite'] },
+    'cola': { product: 'Cola', category: 'Beverages', brands: ['coca cola', 'pepsi'] },
+    'pepsi': { product: 'Pepsi', category: 'Beverages', brands: ['pepsi'] },
+    'coke': { product: 'Coca Cola', category: 'Beverages', brands: ['coca cola'] },
+    'sprite': { product: 'Sprite', category: 'Beverages', brands: ['sprite'] },
+    'juice': { product: 'Juice', category: 'Beverages', brands: ['real', 'tropicana'] },
+    'water': { product: 'Water', category: 'Beverages', brands: ['bisleri', 'aquafina', 'kinley'] },
+    
+    // Dairy
+    'milk': { product: 'Milk', category: 'Dairy', brands: ['amul', 'mother dairy'] },
+    'cheese': { product: 'Cheese', category: 'Dairy', brands: ['amul', 'britannia'] },
+    'butter': { product: 'Butter', category: 'Dairy', brands: ['amul', 'mother dairy'] },
+    'curd': { product: 'Curd', category: 'Dairy', brands: ['amul'] },
+    'yogurt': { product: 'Yogurt', category: 'Dairy', brands: [] },
+    
+    // Grains & Staples
+    'bread': { product: 'Bread', category: 'Bakery', brands: ['britannia', 'harvest gold'] },
+    'rice': { product: 'Rice', category: 'Grains', brands: ['india gate', 'daawat'] },
+    'flour': { product: 'Flour', category: 'Grains', brands: ['aashirvaad', 'pillsbury'] },
+    'atta': { product: 'Atta', category: 'Grains', brands: ['aashirvaad'] },
+    
+    // Common brands
+    'britannia': { product: 'Britannia Product', category: 'Biscuits', brands: ['britannia'] },
+    'parle': { product: 'Parle Product', category: 'Biscuits', brands: ['parle'] },
+    'amul': { product: 'Amul Product', category: 'Dairy', brands: ['amul'] },
+    'nestle': { product: 'Nestle Product', category: 'Chocolates', brands: ['nestle'] },
   };
 
-  let detectedCategory = 'General';
-  let detectedProduct = 'Product';
+  let detectedInfo: any = null;
+  let matchedKeyword = '';
 
-  for (const [keyword, category] of Object.entries(categories)) {
+  // Check for product keywords in filename
+  for (const [keyword, info] of Object.entries(productKeywords)) {
     if (fileName.includes(keyword)) {
-      detectedCategory = category;
-      detectedProduct = keyword.charAt(0).toUpperCase() + keyword.slice(1);
+      detectedInfo = info;
+      matchedKeyword = keyword;
       break;
     }
   }
 
-  const relatedProducts = findRelatedProducts(detectedProduct, detectedCategory, products);
+  // If no keyword match in filename, try to match against existing products
+  if (!detectedInfo && products && products.length > 0) {
+    console.log('🔍 Searching in product database...');
+    
+    // Try to find products with names similar to filename
+    const fileWords = fileName.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 2);
+    
+    for (const product of products) {
+      const productNameLower = product.name.toLowerCase();
+      const productWords = productNameLower.split(/\s+/);
+      
+      // Check if any file words match product words
+      for (const fileWord of fileWords) {
+        if (productWords.some(pw => pw.includes(fileWord) || fileWord.includes(pw))) {
+          console.log(`✅ Found match: ${product.name}`);
+          return {
+            detectedProduct: product.name,
+            confidence: 75,
+            relatedProducts: [product, ...findRelatedProducts(product.name, product.category, products).slice(0, 5)],
+            description: `🎯 **Product Identified!**\n\nFound "${product.name}" in your inventory based on the image filename. This product is in the ${product.category} category and is currently ${product.stock > 0 ? 'in stock' : 'out of stock'}.`
+          };
+        }
+      }
+    }
+  }
+
+  // If no match found at all
+  if (!detectedInfo) {
+    return {
+      detectedProduct: 'Unknown product',
+      confidence: 0,
+      relatedProducts: [],
+      description: `⚠️ **Product Not Recognized**\n\nCould not identify the product from the image. \n\n**Tips:**\n• Ensure the image clearly shows the product packaging\n• Try renaming the file with the product name (e.g., "lays-chips.jpg")\n• Upload a clearer image with visible branding\n• The product might not be in your inventory yet`
+    };
+  }
+
+  // Find related products in inventory
+  const relatedProducts = findRelatedProducts(detectedInfo.product, detectedInfo.category, products);
 
   return {
-    detectedProduct: `${detectedProduct} (Detected from filename)`,
-    confidence: 70,
+    detectedProduct: detectedInfo.product,
+    confidence: relatedProducts.length > 0 ? 80 : 50,
     relatedProducts,
-    description: `Based on the image analysis, this appears to be a ${detectedProduct.toLowerCase()} product. We found ${relatedProducts.length} similar items in your store.`
+    description: relatedProducts.length > 0 
+      ? `🎯 **Product Detected!**\n\nIdentified as "${detectedInfo.product}" (${detectedInfo.category}). Found ${relatedProducts.length} matching item${relatedProducts.length > 1 ? 's' : ''} in your store inventory.`
+      : `🔍 **Possible Match**\n\nThis appears to be "${detectedInfo.product}" (${detectedInfo.category}), but we couldn't find exact matches in your inventory. Consider adding this product to your store!`
   };
 }
 

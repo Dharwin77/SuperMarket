@@ -134,24 +134,14 @@ export default function Profit() {
     const lossPercentage = totalCost > 0 ? (totalLoss / totalCost) * 100 : 0;
 
     // Build category array
-    const categoryColors = [
-      "from-green-500 to-emerald-600",
-      "from-blue-500 to-cyan-600",
-      "from-purple-500 to-violet-600",
-      "from-yellow-500 to-orange-600",
-      "from-pink-500 to-rose-600",
-      "from-red-500 to-rose-600",
-    ];
-
     const categories = Array.from(categoryStats.entries())
-      .map(([name, stats], index) => {
+      .map(([name, stats]) => {
         const profit = stats.revenue - stats.cost;
         const percentage = stats.cost > 0 ? (profit / stats.cost) * 100 : 0;
         return {
           name,
           profit,
           percentage,
-          color: categoryColors[index % categoryColors.length],
         };
       })
       .sort((a, b) => b.profit - a.profit);
@@ -171,6 +161,7 @@ export default function Profit() {
 
   // Check if cost price data is available
   const hasCostPriceData = products.some((p) => p.cost_price);
+  const isNetProfitPositive = profitData.netProfit >= 0;
 
   return (
     <MainLayout>
@@ -182,8 +173,8 @@ export default function Profit() {
           className="flex items-center justify-between"
         >
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-              <TrendingUp className="h-6 w-6 text-white" />
+            <div className="h-12 w-12 rounded-xl bg-green-100 flex items-center justify-center">
+              <TrendingUp className="h-6 w-6 text-green-600" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-foreground">Profits</h1>
@@ -234,11 +225,11 @@ export default function Profit() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-sm font-medium text-muted-foreground">Total Revenue</div>
-                  <div className="h-10 w-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
-                    <DollarSign className="h-5 w-5 text-cyan-400" />
+                  <div className="h-10 w-10 rounded-lg bg-cyan-100 flex items-center justify-center">
+                    <DollarSign className="h-5 w-5 text-cyan-600" />
                   </div>
                 </div>
-                <div className="text-3xl font-bold text-cyan-400">
+                <div className="text-3xl font-bold text-cyan-700">
                   ₹{profitData.totalRevenue.toLocaleString()}
                 </div>
               </CardContent>
@@ -250,18 +241,19 @@ export default function Profit() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
           >
-            <Card className="glass-card border-green-500/30 bg-green-500/5">
+            <Card className="glass-card border-green-500/30 bg-green-50">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-sm font-medium text-muted-foreground">Total Profit</div>
-                  <div className="h-10 w-10 rounded-lg bg-green-500/20 flex items-center justify-center">
-                    <TrendingUp className="h-5 w-5 text-green-400" />
+                  <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
+                    <TrendingUp className="h-5 w-5 text-green-600" />
                   </div>
                 </div>
-                <div className="text-3xl font-bold text-green-400">
+                <div className="text-3xl font-bold text-green-700">
                   +₹{profitData.totalProfit.toLocaleString()}
                 </div>
-                <div className="text-sm font-medium text-green-400/70 mt-1">
+                <div className="text-sm font-medium text-green-700 mt-1 flex items-center gap-1">
+                  <TrendingUp className="h-4 w-4" />
                   +{profitData.profitPercentage.toFixed(2)}%
                 </div>
               </CardContent>
@@ -273,18 +265,18 @@ export default function Profit() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <Card className="glass-card border-red-500/30 bg-red-500/5">
+            <Card className="glass-card border-red-500/30 bg-red-50">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-sm font-medium text-muted-foreground">Total Loss</div>
-                  <div className="h-10 w-10 rounded-lg bg-red-500/20 flex items-center justify-center">
-                    <TrendingDown className="h-5 w-5 text-red-400" />
+                  <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center">
+                    <TrendingDown className="h-5 w-5 text-red-600" />
                   </div>
                 </div>
-                <div className="text-3xl font-bold text-red-400">
+                <div className="text-3xl font-bold text-red-700">
                   -₹{profitData.totalLoss.toLocaleString()}
                 </div>
-                <div className="text-sm font-medium text-red-400/70 mt-1">
+                <div className="text-sm font-medium text-red-700 mt-1">
                   -{profitData.lossPercentage.toFixed(2)}%
                 </div>
               </CardContent>
@@ -296,15 +288,19 @@ export default function Profit() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25 }}
           >
-            <Card className="glass-card border-blue-500/30 bg-blue-500/5">
+            <Card className={`glass-card ${isNetProfitPositive ? "border-green-500/30 bg-green-50" : "border-red-500/30 bg-red-50"}`}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-sm font-medium text-muted-foreground">Net Profit</div>
-                  <div className="h-10 w-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                    <TrendingUp className="h-5 w-5 text-blue-400" />
+                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${isNetProfitPositive ? "bg-green-100" : "bg-red-100"}`}>
+                    {isNetProfitPositive ? (
+                      <TrendingUp className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <TrendingDown className="h-5 w-5 text-red-600" />
+                    )}
                   </div>
                 </div>
-                <div className="text-3xl font-bold text-blue-400">
+                <div className={`text-3xl font-bold ${isNetProfitPositive ? "text-green-700" : "text-red-700"}`}>
                   ₹{profitData.netProfit.toLocaleString()}
                 </div>
               </CardContent>
@@ -345,30 +341,30 @@ export default function Profit() {
                       transition={{ delay: 0.35 + index * 0.05 }}
                       className="group cursor-pointer"
                     >
-                      <Card className={`glass-card border-white/10 bg-gradient-to-br ${category.color} bg-opacity-10 hover:scale-105 transition-transform duration-300`}>
+                      <Card className={`glass-card ${category.profit >= 0 ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"} hover:scale-105 transition-transform duration-300`}>
                         <CardContent className="p-5">
                           <div className="flex items-start justify-between mb-3">
                             <div className="text-sm font-medium text-foreground">{category.name}</div>
                             {category.profit >= 0 ? (
-                              <TrendingUp className="h-4 w-4 text-green-400" />
+                              <TrendingUp className="h-4 w-4 text-green-600" />
                             ) : (
-                              <TrendingDown className="h-4 w-4 text-red-400" />
+                              <TrendingDown className="h-4 w-4 text-red-600" />
                             )}
                           </div>
                           <div className="space-y-1">
-                            <div className={`text-2xl font-bold ${category.profit >= 0 ? "text-green-400" : "text-red-400"}`}>
+                            <div className={`text-2xl font-bold ${category.profit >= 0 ? "text-green-700" : "text-red-700"}`}>
                               {category.profit >= 0 ? "+" : ""}₹{Math.abs(category.profit).toLocaleString()}
                             </div>
-                            <div className={`text-sm font-medium ${category.profit >= 0 ? "text-green-400/70" : "text-red-400/70"}`}>
+                            <div className={`text-sm font-medium ${category.profit >= 0 ? "text-green-700" : "text-red-700"}`}>
                               {category.profit >= 0 ? "+" : ""}{category.percentage.toFixed(1)}%
                             </div>
                           </div>
-                          <div className="mt-4 h-2 bg-white/10 rounded-full overflow-hidden">
+                          <div className="mt-4 h-2 bg-muted rounded-full overflow-hidden">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${Math.min(Math.abs(category.percentage) * 4, 100)}%` }}
                               transition={{ delay: 0.4 + index * 0.05, duration: 0.5 }}
-                              className={`h-full rounded-full ${category.profit >= 0 ? "bg-green-400" : "bg-red-400"}`}
+                              className={`h-full rounded-full ${category.profit >= 0 ? "bg-green-600" : "bg-red-600"}`}
                             />
                           </div>
                         </CardContent>

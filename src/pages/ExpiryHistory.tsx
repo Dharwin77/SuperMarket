@@ -221,7 +221,7 @@ export default function ExpiryHistory() {
                       value={daysFilter}
                       onChange={(e) => setDaysFilter(e.target.value)}
                       placeholder="Enter number of days"
-                      className="pl-10 bg-[#1A1F2E] border-cyan-500/30 focus:border-cyan-500"
+                      className="pl-10 bg-background border-border"
                     />
                   </div>
                 </div>
@@ -312,32 +312,32 @@ export default function ExpiryHistory() {
 
         {/* Product Details Dialog */}
         <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-          <DialogContent className="sm:max-w-[400px] bg-[#0A0F1E] border-red-500/30">
+          <DialogContent className="sm:max-w-[360px] max-h-[90vh] overflow-y-auto bg-card border-red-300">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
+              <DialogTitle className="text-lg font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
                 Product Details
               </DialogTitle>
             </DialogHeader>
             {selectedProduct && (
-              <div className="space-y-3 mt-3">
+              <div className="space-y-2 mt-2">
                 {/* Product Image */}
-                <div className="aspect-square bg-gradient-to-br from-red-500/20 to-orange-500/20 rounded-xl flex items-center justify-center overflow-hidden">
+                <div className="h-48 bg-gradient-to-br from-red-500/20 to-orange-500/20 rounded-lg flex items-center justify-center overflow-hidden">
                   {selectedProduct.image_url ? (
                     <img 
                       src={selectedProduct.image_url} 
                       alt={selectedProduct.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   ) : (
-                    <Package className="h-24 w-24 text-red-400" />
+                    <Package className="h-16 w-16 text-red-400" />
                   )}
                 </div>
 
                 {/* Product Info */}
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div>
                     <Label className="text-xs text-muted-foreground">Product Name</Label>
-                    <p className="text-lg font-semibold text-red-300">{selectedProduct.name}</p>
+                    <p className="text-base font-semibold text-red-300">{selectedProduct.name}</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -347,7 +347,7 @@ export default function ExpiryHistory() {
                     </div>
                     <div>
                       <Label className="text-xs text-muted-foreground">Price</Label>
-                      <p className="text-2xl font-bold gradient-text">₹{selectedProduct.price?.toFixed(2)}</p>
+                      <p className="text-xl font-bold gradient-text">₹{selectedProduct.price?.toFixed(2)}</p>
                     </div>
                   </div>
 
@@ -405,7 +405,7 @@ export default function ExpiryHistory() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-2 pt-3">
                   <Button
                     variant="destructive"
                     className="flex-1"

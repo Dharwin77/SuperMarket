@@ -452,8 +452,8 @@ const Reports = () => {
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-4"
         >
-          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-            <FileText className="h-6 w-6 text-white" />
+          <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+            <FileText className="h-6 w-6 text-primary" />
           </div>
           <div>
             <h1 className="text-3xl font-bold text-foreground">Reports</h1>
@@ -584,8 +584,8 @@ const Reports = () => {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                      <Package className="h-5 w-5 text-purple-400" />
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Package className="h-5 w-5 text-primary" />
                     </div>
                     <div>
                       <CardTitle>Stock Report</CardTitle>
