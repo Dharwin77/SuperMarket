@@ -77,11 +77,11 @@ const isLocalDevelopment =
   window.location.protocol !== "https:" &&
   (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
 
+const configuredBackendUrl = (import.meta.env.VITE_BACKEND_URL || "").trim().replace(/\/$/, "");
+const isConfiguredBackendNgrok = /ngrok/i.test(configuredBackendUrl);
 const BACKEND_URL = isLocalDevelopment
   ? "http://localhost:3001"
-  : import.meta.env.VITE_BACKEND_URL ||
-    import.meta.env.VITE_PUBLIC_URL ||
-    "http://localhost:3001";
+  : configuredBackendUrl;
 const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_YourKeyHere";
 
 function loadRazorpayScript(): Promise<boolean> {
@@ -242,6 +242,14 @@ export function PaymentModal({
     setErrorMsg(null);
 
     try {
+      if (!BACKEND_URL) {
+        throw new Error("Payment API is not configured. Set VITE_BACKEND_URL to your Render backend URL and redeploy.");
+      }
+
+      if (!isLocalDevelopment && isConfiguredBackendNgrok) {
+        throw new Error("VITE_BACKEND_URL is pointing to ngrok. Use your permanent Render backend URL and redeploy.");
+      }
+
       // 1. Create order on backend
       const orderRes = await fetch(`${BACKEND_URL}/api/razorpay/create-order`, {
         method: "POST",
