@@ -50,6 +50,20 @@ export default function Description() {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [pendingInvoiceNumber, setPendingInvoiceNumber] = useState("");
 
+  const getSafeImageUrl = (url?: string | null) => {
+    if (!url) return null;
+
+    const isHttpsPage = typeof window !== "undefined" && window.location.protocol === "https:";
+    const isInsecureHttpImage = /^http:\/\//i.test(url);
+
+    // Prevent browser mixed-content blocks on deployed HTTPS pages.
+    if (isHttpsPage && isInsecureHttpImage) {
+      return null;
+    }
+
+    return url;
+  };
+
   // Filter products based on search
   const filteredProducts = products?.filter(
     (product) =>
@@ -590,18 +604,21 @@ export default function Description() {
                       <p className="text-muted-foreground">No products found</p>
                     </div>
                   ) : (
-                    filteredProducts.map((product) => (
-                      <motion.div
-                        key={product.id}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="glass-card p-3 border border-white/10 hover:border-cyan-500/50 transition-all"
-                      >
+                    filteredProducts.map((product) => {
+                      const safeImageUrl = getSafeImageUrl(product.image_url);
+
+                      return (
+                        <motion.div
+                          key={product.id}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="glass-card p-3 border border-white/10 hover:border-cyan-500/50 transition-all"
+                        >
                         <div className="relative aspect-square rounded-lg overflow-hidden bg-muted mb-2 border border-white/10">
-                          {product.image_url ? (
+                          {safeImageUrl ? (
                             <>
                               <img
-                                src={product.image_url}
+                                src={safeImageUrl}
                                 alt={product.name}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
@@ -648,8 +665,9 @@ export default function Description() {
                           <Plus className="h-3.5 w-3.5 mr-2" />
                           Add to Cart
                         </Button>
-                      </motion.div>
-                    ))
+                        </motion.div>
+                      );
+                    })
                   )}
                 </div>
               </CardContent>
