@@ -76,9 +76,11 @@ const isLocalDevelopment =
   typeof window !== "undefined" &&
   window.location.protocol !== "https:" &&
   (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+const isHttpsPage = typeof window !== "undefined" && window.location.protocol === "https:";
 
 const configuredBackendUrl = (import.meta.env.VITE_BACKEND_URL || "").trim().replace(/\/$/, "");
 const isConfiguredBackendNgrok = /ngrok/i.test(configuredBackendUrl);
+const isConfiguredBackendInsecureHttp = /^http:\/\//i.test(configuredBackendUrl);
 const BACKEND_URL = isLocalDevelopment
   ? "http://localhost:3001"
   : configuredBackendUrl;
@@ -252,6 +254,10 @@ export function PaymentModal({
 
       if (!BACKEND_URL) {
         throw new Error("Payment API is not configured. Set VITE_BACKEND_URL to your Render backend URL and redeploy.");
+      }
+
+      if (isHttpsPage && isConfiguredBackendInsecureHttp) {
+        throw new Error("Mixed content blocked: VITE_BACKEND_URL must use HTTPS on deployed site. Update Vercel env and redeploy.");
       }
 
       if (!isLocalDevelopment && isConfiguredBackendNgrok) {
