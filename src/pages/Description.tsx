@@ -210,6 +210,20 @@ export default function Description() {
     return `INV${timestamp}`;
   };
 
+  const normalizeIndianPhoneNumber = (rawNumber: string) => {
+    const digits = (rawNumber || "").replace(/\D/g, "");
+
+    if (digits.length === 10) {
+      return `91${digits}`;
+    }
+
+    if (digits.length === 12 && digits.startsWith("91")) {
+      return digits;
+    }
+
+    return "";
+  };
+
   // Generate mock PDF URL (in production, this would be from Cloudinary or your storage)
   const generatePdfUrl = (invoice: string) => {
     // Mock URL - replace with actual PDF generation/upload in production
@@ -380,13 +394,8 @@ export default function Description() {
 
       // Send via WhatsApp if checkbox is checked and number provided
       let sent = false;
-      const whatsappDigits = (customerWhatsApp || '').replace(/\D/g, '');
-      const normalizedWhatsappNumber =
-        whatsappDigits.length === 10
-          ? `91${whatsappDigits}`
-          : whatsappDigits.length === 12 && whatsappDigits.startsWith('91')
-            ? whatsappDigits
-            : '';
+      const whatsappSourceNumber = customerWhatsApp.trim() || customerMobile.trim();
+      const normalizedWhatsappNumber = normalizeIndianPhoneNumber(whatsappSourceNumber);
 
       if (sendViaWhatsApp && normalizedWhatsappNumber) {
 
@@ -408,8 +417,11 @@ export default function Description() {
         // Create WhatsApp URL
         const whatsappUrl = `https://wa.me/${normalizedWhatsappNumber}?text=${encodedMessage}`;
 
-        // Open WhatsApp
-        window.open(whatsappUrl, '_blank');
+        // Try opening in a new tab first; if blocked, redirect current tab.
+        const whatsappWindow = window.open(whatsappUrl, '_blank');
+        if (!whatsappWindow) {
+          window.location.href = whatsappUrl;
+        }
         sent = true;
       } else if (sendViaWhatsApp && !normalizedWhatsappNumber) {
         toast({
@@ -480,10 +492,13 @@ export default function Description() {
       return;
     }
 
-    if (sendViaWhatsApp && customerWhatsApp.trim().length !== 10) {
+    const whatsappSourceNumber = customerWhatsApp.trim() || customerMobile.trim();
+    const normalizedWhatsappNumber = normalizeIndianPhoneNumber(whatsappSourceNumber);
+
+    if (sendViaWhatsApp && !normalizedWhatsappNumber) {
       toast({
         title: "Invalid WhatsApp number",
-        description: "Please enter a valid 10-digit WhatsApp number",
+        description: "Please enter a valid 10-digit Indian WhatsApp number (or with +91).",
         variant: "destructive",
       });
       return;
