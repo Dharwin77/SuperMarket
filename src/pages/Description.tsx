@@ -50,6 +50,19 @@ export default function Description() {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [pendingInvoiceNumber, setPendingInvoiceNumber] = useState("");
 
+  const isProductExpired = (expiryDate?: string | null) => {
+    if (!expiryDate) return false;
+
+    const parsedExpiryDate = new Date(expiryDate);
+    if (Number.isNaN(parsedExpiryDate.getTime())) return false;
+
+    parsedExpiryDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return parsedExpiryDate < today;
+  };
+
   const getSafeImageUrl = (url?: string | null) => {
     if (!url) return null;
 
@@ -74,6 +87,15 @@ export default function Description() {
 
   // Add product to cart
   const addToCart = (product: any) => {
+    if (isProductExpired(product.expiry_date)) {
+      toast({
+        title: "Product expired",
+        description: `${product.name} is expired and cannot be billed`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Check if product has sufficient stock
     if (product.stock <= 0) {
       toast({
@@ -261,6 +283,21 @@ export default function Description() {
       toast({
         title: "Invalid mobile number",
         description: "Please enter a valid 10-digit mobile number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const expiredCartItems = cart.filter((item) => {
+      const product = products?.find((p) => p.id === item.id);
+      return product ? isProductExpired(product.expiry_date) : false;
+    });
+
+    if (expiredCartItems.length > 0) {
+      const firstExpiredProduct = expiredCartItems[0]?.name;
+      toast({
+        title: "Expired product in cart",
+        description: `${firstExpiredProduct} is expired and cannot be billed. Please remove expired items from cart.`,
         variant: "destructive",
       });
       return;
@@ -621,6 +658,7 @@ export default function Description() {
                   ) : (
                     filteredProducts.map((product) => {
                       const safeImageUrl = getSafeImageUrl(product.image_url);
+                      const isExpired = isProductExpired(product.expiry_date);
 
                       return (
                         <motion.div
@@ -675,10 +713,10 @@ export default function Description() {
                         <Button
                           onClick={() => addToCart(product)}
                           className="w-full h-8 text-sm bg-cyan-500 hover:bg-cyan-600"
-                          disabled={product.stock === 0}
+                          disabled={product.stock === 0 || isExpired}
                         >
                           <Plus className="h-3.5 w-3.5 mr-2" />
-                          Add to Cart
+                          {isExpired ? "Expired" : "Add to Cart"}
                         </Button>
                         </motion.div>
                       );
