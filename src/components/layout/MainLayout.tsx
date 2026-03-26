@@ -30,10 +30,10 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <ChatContext.Provider value={{ isChatOpen, toggleChat }}>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-dvh bg-background overflow-x-hidden">
         <Sidebar />
         
-        <main className="ml-64 min-h-screen p-8 relative">
+        <main className="ml-64 min-h-dvh p-4 sm:p-6 lg:p-8 relative overflow-x-hidden">
           {children}
         </main>
 

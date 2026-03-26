@@ -22,6 +22,40 @@ const mockProduct = {
   profitMargin: 32,
 };
 
+function pickPrimaryMatchedProduct(result: any) {
+  const relatedProducts = Array.isArray(result?.relatedProducts) ? result.relatedProducts : [];
+  if (relatedProducts.length === 0) return null;
+
+  const detectedName = (result?.detectedProduct || '').toLowerCase();
+  const detectedWords = detectedName
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((word: string) => word.length > 2);
+
+  const bestMatch = relatedProducts
+    .map((product: any) => {
+      const name = (product?.name || '').toLowerCase();
+      let wordOverlap = 0;
+
+      for (const word of detectedWords) {
+        if (name.includes(word)) {
+          wordOverlap += 1;
+        }
+      }
+
+      const exactNameBoost = detectedName && (name.includes(detectedName) || detectedName.includes(name)) ? 100 : 0;
+      const relevanceScore = Number(product?.relevanceScore || 0);
+
+      return {
+        product,
+        score: exactNameBoost + (wordOverlap * 20) + relevanceScore,
+      };
+    })
+    .sort((a: any, b: any) => b.score - a.score)[0];
+
+  return bestMatch?.product || relatedProducts[0];
+}
+
 const Scanner = () => {
   const { data: products } = useProducts();
   const navigate = useNavigate();
@@ -60,11 +94,17 @@ const Scanner = () => {
       
       // If we found related products, show the first one as scanned
       if (result.relatedProducts.length > 0) {
+        const primaryProduct = pickPrimaryMatchedProduct(result);
+        if (!primaryProduct) {
+          setScannedProduct(null);
+          return;
+        }
+
         setScannedProduct({
-          name: result.relatedProducts[0].name,
-          mrp: result.relatedProducts[0].price,
-          onlinePrice: result.relatedProducts[0].price * 0.9,
-          stock: result.relatedProducts[0].stock,
+          name: primaryProduct.name,
+          mrp: primaryProduct.price,
+          onlinePrice: primaryProduct.price * 0.9,
+          stock: primaryProduct.stock,
           shelf: 'A3',
           profitMargin: 30,
         });

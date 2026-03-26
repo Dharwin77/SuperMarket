@@ -164,11 +164,6 @@ export default function StaffLogin() {
                 )}
               </Button>
 
-              <div className="mt-6 p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                <p className="text-xs text-foreground text-center">
-                  Default: <strong>staff</strong> / <strong>staff123</strong>
-                </p>
-              </div>
             </form>
           </CardContent>
         </Card>

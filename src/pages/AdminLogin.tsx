@@ -164,11 +164,6 @@ export default function AdminLogin() {
                 )}
               </Button>
 
-              <div className="mt-6 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                <p className="text-xs text-foreground text-center">
-                  Default: <strong>admin</strong> / <strong>admin123</strong>
-                </p>
-              </div>
             </form>
           </CardContent>
         </Card>

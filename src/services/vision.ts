@@ -111,19 +111,25 @@ export async function analyzeImage(
 }
 
 function parseVisionResponse(response: string, products: any[]) {
-  const lines = response.split('\n');
   let detectedProduct = 'Unknown Product';
   let category = 'General';
   let description = response;
 
-  // Parse the response
-  for (const line of lines) {
-    if (line.toLowerCase().includes('product:')) {
-      detectedProduct = line.split(':')[1]?.trim() || detectedProduct;
-    }
-    if (line.toLowerCase().includes('category:')) {
-      category = line.split(':')[1]?.trim() || category;
-    }
+  // Parse flexible model output, including one-line "Product: ..., Category: ..." responses.
+  const productMatch = response.match(/product\s*:\s*(.+?)(?=(?:\n|,?\s*category\s*:|,?\s*description\s*:|$))/i);
+  const categoryMatch = response.match(/category\s*:\s*(.+?)(?=(?:\n|,?\s*description\s*:|$))/i);
+  const descriptionMatch = response.match(/description\s*:\s*(.+?)\s*$/i);
+
+  if (productMatch?.[1]) {
+    detectedProduct = normalizeVisionField(productMatch[1]);
+  }
+
+  if (categoryMatch?.[1]) {
+    category = normalizeVisionField(categoryMatch[1]);
+  }
+
+  if (descriptionMatch?.[1]) {
+    description = normalizeVisionField(descriptionMatch[1]);
   }
 
   // Check if AI determined this is not a product
@@ -145,6 +151,13 @@ function parseVisionResponse(response: string, products: any[]) {
     relatedProducts,
     description
   };
+}
+
+function normalizeVisionField(value: string) {
+  return value
+    .replace(/^[-*\s]+/, '')
+    .replace(/^"|"$/g, '')
+    .trim();
 }
 
 function generateFallbackAnalysis(imageFile: File, products: any[]) {

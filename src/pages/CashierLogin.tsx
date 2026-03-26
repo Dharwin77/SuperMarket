@@ -164,11 +164,6 @@ export default function CashierLogin() {
                 )}
               </Button>
 
-              <div className="mt-6 p-4 rounded-lg bg-green-500/10 border border-green-500/20">
-                <p className="text-xs text-foreground text-center">
-                  Default: <strong>cashier</strong> / <strong>cashier123</strong>
-                </p>
-              </div>
             </form>
           </CardContent>
         </Card>

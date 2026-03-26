@@ -66,11 +66,11 @@ export function Sidebar() {
       initial={{ x: -20, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen bg-sidebar border-r border-sidebar-border shadow-sm transition-all duration-300",
+        "fixed left-0 top-0 z-40 h-dvh bg-sidebar border-r border-sidebar-border shadow-sm transition-all duration-300",
         collapsed ? "w-20" : "w-64"
       )}
     >
-      <div className="flex h-full flex-col">
+      <div className="flex h-full min-h-0 flex-col">
         {/* Logo */}
         <div className="flex h-20 items-center justify-between px-4 border-b border-border">
           <AnimatePresence mode="wait">
@@ -111,7 +111,7 @@ export function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-2">
           {navItems.filter((item) => user && item.roles.includes(user.role)).length === 0 && !collapsed && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -189,7 +189,7 @@ export function Sidebar() {
         </nav>
 
         {/* Logout Button */}
-        <div className="p-4 border-t border-border">
+        <div className="shrink-0 p-4 border-t border-border bg-sidebar">
           <Button
             onClick={handleLogout}
             variant="outline"
