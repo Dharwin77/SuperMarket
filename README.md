@@ -4,8 +4,6 @@
 
 A futuristic AI-powered retail management platform with smart scanning, inventory prediction, and automated purchasing.
 
-## How can I edit this code?
-
 There are several ways of editing your application.
 
 **Use your preferred IDE**
